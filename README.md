@@ -9,7 +9,7 @@ pip install git+https://github.com/haoty/QSCAR
 ```
 
 ## Get Started
-__The following walkthrough is also available as a [Jupyter notebook](https://github.com/HaoTy/OSCAR/notebooks/get_started.ipynb).__
+__The following walkthrough is also available as a [Jupyter notebook](https://github.com/HaoTy/OSCAR/blob/main/notebooks/get_started.ipynb).__
 First, define the problem of interest with `qiskit_optimization`, `qiskit_finance`, or `docplex.mp`.
 
 
@@ -77,7 +77,7 @@ plt.imshow(landscape.reconstructed_landscape)
 
 
     
-![https://github.com/HaoTy/OSCAR/figs/get_started_1.png](https://github.com/HaoTy/OSCAR/figs/get_started_1.png)
+![https://github.com/HaoTy/OSCAR/figs/get_started_1.png](https://github.com/HaoTy/OSCAR/blob/main/figs/get_started_1.png?raw=true)
 
 
 
@@ -90,7 +90,7 @@ plt.imshow(landscape.true_landscape)
 ```
 
     
-![https://github.com/HaoTy/OSCAR/figs/get_started_1.png](https://github.com/HaoTy/OSCAR/figs/get_started_2.png)
+![https://github.com/HaoTy/OSCAR/figs/get_started_2.png](https://github.com/HaoTy/OSCAR/blob/main/figs/get_started_2.png?raw=true)
 
 
 
