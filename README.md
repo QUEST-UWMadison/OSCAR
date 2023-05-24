@@ -97,8 +97,11 @@ plt.imshow(landscape.true_landscape)
 
 ## Possible Enhancements
 - Execution
-    - Executors for other backends, e.g. cirq.
+    - Executors for other backends, e.g. Cirq.
 - Landscape
+    - Handle parallel/distributed executions and avoid rerun the same parameters
+    - Interpolation and optimization on reconstructed landscape
+    - Better visualization
     - Enhancements for constrained problems
         - Linear combinations of landscapes for deciding a proper penalty factor for the Lagrange method
         - Reconstructions for approximation ratio and in-constraint probability
