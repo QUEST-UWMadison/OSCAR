@@ -10,7 +10,7 @@ setup(
     packages=find_packages(exclude=['test*', 'scripts', 'assets', 'notebooks', 'doc']),
     python_requires='>=3.8.13',
     install_requires=[
-        'numpy>=1.24.3',
+        'numpy>=1.23.5',
         'scipy>=1.10.1',
         'qiskit>=0.43.0',
         'qiskit_finance>=0.3.4',
@@ -18,7 +18,8 @@ setup(
         'qiskit_nature>=0.6.1',
         'networkx>=2.8.8',
         'matplotlib>=3.7.1',
-        'cvxpy>=1.3.1'
+        'cvxpy>=1.3.1',
+        'pyscf>=2.2.1'
     ],
     # test_suite='test.test',
 )
