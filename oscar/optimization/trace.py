@@ -1,21 +1,22 @@
 import pprint
+from dataclasses import dataclass, field
 
 import numpy as np
 from qiskit.algorithms.optimizers import OptimizerResult
 
 
+@dataclass
 class Trace:
-    def __init__(self):
-        self.params_trace: list[np.ndarray] = []
-        self.value_trace: list[float] = []
-        self.time_trace: list[float] = []
-        self.optimal_params: np.ndarray | None = None
-        self.optimal_value: float | None = None
-        self.num_iters: int = 0
-        self.num_fun_evals: int = 0
+    params_trace: list[np.ndarray] = field(default_factory=list)
+    value_trace: list[float] = field(default_factory=list)
+    time_trace: list[float] = field(default_factory=list)
+    optimal_params: np.ndarray | None = None
+    optimal_value: float | None = None
+    num_iters: int = 0
+    num_fun_evals: int = 0
 
-    def __str__(self) -> str:
-        return pprint.pformat(self.__dict__, indent=4)
+    # def __str__(self) -> str:
+    #     return pprint.pformat(self.__dict__, indent=4)
 
     def append(self, params: np.ndarray, value: float, time: float) -> None:
         self.params_trace.append(params)
