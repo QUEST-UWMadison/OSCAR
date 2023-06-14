@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import math
+import warnings
 from time import time
 from typing import TYPE_CHECKING, Callable, Iterable, Literal, Optional
 
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator
 
-from ..execution import BaseExecutor
+from ..execution.base_executor import BaseExecutor
 
 if TYPE_CHECKING:
     from ..reconstruction.base_reconstructor import BaseReconstructor
+    from ..reconstruction import BPReconstructor
 
 
 class Landscape:
@@ -31,6 +34,17 @@ class Landscape:
         self.reconstructed_landscape = None
         self.sampled_landscape = None
         self._sampled_indices = None
+        self._interpolator = None
+
+    @property
+    def interpolator(self):
+        if self._interpolator is None:
+            warnings.warn(
+                "Interpolator not found. "
+                "Initializing the interpolator with default configurations."
+            )
+            self.interpolate()
+        return self._interpolator
 
     @property
     def size(self):
@@ -58,31 +72,49 @@ class Landscape:
     def sampling_fraction(self):
         return self.num_samples / self.size
 
+    def _gen_axes(self) -> list[np.ndarray]:
+        return [
+            np.linspace(
+                self.param_bounds[i][0],
+                self.param_bounds[i][1],
+                self.param_resolutions[i],
+            )
+            for i in range(self.num_params)
+        ]
+
     def _gen_param_grid(self) -> np.ndarray:
         return np.array(
             np.meshgrid(
-                *[
-                    np.linspace(
-                        self.param_bounds[i][0],
-                        self.param_bounds[i][1],
-                        self.param_resolutions[i],
-                    )
-                    for i in range(self.num_params)
-                ],
+                *self._gen_axes(),
                 indexing="ij",
             )
         ).transpose((*range(1, self.num_params + 1), 0))
 
+    def interpolate(
+        self,
+        method: Optional[
+            Literal["linear", "nearest", "slinear", "cubic", "quintic", "pchip"],
+        ] = "slinear",
+        bounds_error: Optional[bool] = False,
+        fill_value: Optional[float] = None,
+    ) -> RegularGridInterpolator:
+        landscape = (
+            self.reconstructed_landscape if self.true_landscape is None else self.true_landscape
+        )
+        self._interpolator = RegularGridInterpolator(
+            self._gen_axes(),
+            landscape,
+            method,
+            bounds_error,
+            fill_value,
+        )
+        return self._interpolator
+
     def _flatten_param_grid(self) -> np.ndarray:
         return self.param_grid.reshape(-1, self.num_params)
 
-    def _run(self, executor: BaseExecutor, param_list: Iterable[np.ndarray]) -> np.ndarray:
-        times, data = [], []
-        for params in param_list:
-            start_time = time()
-            data.append(executor.run(params))
-            times.append(time() - start_time)
-        return np.array(data)
+    def _run(self, executor: BaseExecutor, params_list: Iterable[np.ndarray]) -> np.ndarray:
+        return executor.run_batch(params_list)
 
     def run_all(self, executor: BaseExecutor) -> np.ndarray:
         self.true_landscape = self._run(executor, self._flatten_param_grid()).reshape(
@@ -140,7 +172,9 @@ class Landscape:
             self._flatten_param_grid()[param_indices],
         )
 
-    def reconstruct(self, reconstructor: BaseReconstructor) -> np.ndarray:
+    def reconstruct(self, reconstructor: Optional[BaseReconstructor] = None) -> np.ndarray:
+        if reconstructor is None:
+            reconstructor = BPReconstructor()
         self.reconstructed_landscape = reconstructor.run(self)
         return self.reconstructed_landscape
 
@@ -150,15 +184,14 @@ class Landscape:
         | Callable[[np.ndarray, np.ndarray], float],
     ) -> float:
         if self.true_landscape is None:
-            raise RuntimeError(
-                "The true landscape is needed. Use `Landscape.run_all()` or "
-                "directly supply it to `Landscape.true_landscape`."
-            )
+            warnings.warn("The true landscape is unavailable. " "Running all grid points...")
+            self.run_all()
         if self.reconstructed_landscape is None:
-            raise RuntimeError(
-                "The reconstructed landscape is needed. Use `Landscape.reconstruct()` or "
-                "directly supply it to `Landscape.reconstructed_landscape`."
+            warnings.warn(
+                "The reconstructed landscape is unavailable. "
+                "Reconstructing with default configurations..."
             )
+            self.reconstruct()
         if isinstance(metric, callable):
             return metric(self.true_landscape, self.reconstructed_landscape)
         else:
