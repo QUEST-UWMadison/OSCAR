@@ -1,2 +1,2 @@
-from .base_executor import BaseExecutor
+from .interpolated_landscape_executor import InterpolatedLandscapeExecutor
 from .qiskit import QiskitExecutor

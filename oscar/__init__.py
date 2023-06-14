@@ -1,3 +1,9 @@
-from .execution import QiskitExecutor
+from .execution import InterpolatedLandscapeExecutor, QiskitExecutor
 from .landscape import Landscape
-from .reconstruction import BPReconstructor, BPDNReconstructor
+from .optimization import Trace, QiskitOptimizer
+from .reconstruction import (
+    BPReconstructor,
+    BPDNReconstructor,
+    BPDNVariantReconstructor,
+    LassoReconstructor,
+)
