@@ -4,7 +4,7 @@ from qiskit.algorithms.minimum_eigensolvers import VQE, SamplingVQE
 from qiskit.opflow import OperatorBase
 from qiskit.quantum_info.operators.base_operator import BaseOperator
 
-from ..base_executor import BaseExecutor
+from .base_executor import BaseExecutor
 
 
 class QiskitExecutor(BaseExecutor):
