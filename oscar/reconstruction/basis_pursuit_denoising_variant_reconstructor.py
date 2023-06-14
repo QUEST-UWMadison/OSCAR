@@ -8,7 +8,7 @@ from .base_cvxpy_reconstructor import BaseCvxPyReconstructor
 
 class BPDNVariantReconstructor(BaseCvxPyReconstructor):
     def __init__(self, tolerance: float, solver: Optional[str] = None, **solver_kwargs):
-        self.tolerance = tolerance
+        self.tolerance: float = tolerance
         super().__init__(solver, **solver_kwargs)
 
     def _build_optimization_problem(

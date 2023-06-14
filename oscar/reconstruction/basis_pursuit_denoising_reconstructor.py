@@ -8,12 +8,9 @@ from .base_cvxpy_reconstructor import BaseCvxPyReconstructor
 
 class BPDNReconstructor(BaseCvxPyReconstructor):
     def __init__(
-        self,
-        normalization_factor: Optional[float] = 0.001,
-        solver: Optional[str] = None,
-        **solver_kwargs
+        self, normalization_factor: float = 0.001, solver: Optional[str] = None, **solver_kwargs
     ):
-        self.normalization_factor = normalization_factor
+        self.normalization_factor: float = normalization_factor
         super().__init__(solver, **solver_kwargs)
 
     def _build_optimization_problem(

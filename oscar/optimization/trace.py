@@ -12,11 +12,8 @@ class Trace:
     time_trace: list[float] = field(default_factory=list)
     optimal_params: np.ndarray | None = None
     optimal_value: float | None = None
-    num_iters: int = 0
-    num_fun_evals: int = 0
-
-    # def __str__(self) -> str:
-    #     return pprint.pformat(self.__dict__, indent=4)
+    num_iters: int = None
+    num_fun_evals: int = None
 
     def append(self, params: np.ndarray, value: float, time: float) -> None:
         self.params_trace.append(params)

@@ -11,7 +11,7 @@ from .trace import Trace
 
 class QiskitOptimizer(BaseOptimizer):
     def __init__(self, qiskit_optimizer: Optimizer):
-        self.optimizer = qiskit_optimizer
+        self.optimizer: Optimizer = qiskit_optimizer
 
     def run(
         self,

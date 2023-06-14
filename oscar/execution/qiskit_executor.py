@@ -11,8 +11,8 @@ class QiskitExecutor(BaseExecutor):
     def __init__(
         self, algorithm: OldVQE | VQE | SamplingVQE, operator: OperatorBase | BaseOperator
     ):
-        self.algorithm = algorithm
-        self.operator = operator
+        self.algorithm: OldVQE | VQE | SamplingVQE = algorithm
+        self.operator: OperatorBase | BaseOperator = operator
         algorithm._check_operator_ansatz(operator)
         if isinstance(algorithm, OldVQE):
             self.evaluate_energy = algorithm.get_energy_evaluation(operator)

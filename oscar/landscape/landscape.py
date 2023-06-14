@@ -23,20 +23,20 @@ class Landscape:
             math.pi / 2,
         ),
     ):
-        self.num_params = len(param_resolutions)
-        self.param_resolutions = np.array(param_resolutions)
+        self.num_params: int = len(param_resolutions)
+        self.param_resolutions: np.ndarray = np.array(param_resolutions)
         if not isinstance(param_bounds[0], tuple):
             param_bounds = [param_bounds] * self.num_params
-        self.param_bounds = np.array(param_bounds)
-        self.param_grid = self._gen_param_grid()
-        self.true_landscape = None
-        self.reconstructed_landscape = None
-        self.sampled_landscape = None
-        self._sampled_indices = None
-        self._interpolator = None
+        self.param_bounds: np.ndarray = np.array(param_bounds)
+        self.param_grid: np.ndarray = self._gen_param_grid()
+        self.true_landscape: np.ndarray | None = None
+        self.reconstructed_landscape: np.ndarray | None = None
+        self.sampled_landscape: np.ndarray | None = None
+        self._sampled_indices: np.ndarray | None = None
+        self._interpolator: RegularGridInterpolator | None = None
 
     @property
-    def interpolator(self):
+    def interpolator(self) -> RegularGridInterpolator:
         if self._interpolator is None:
             warnings.warn(
                 "Interpolator not found. "
@@ -46,15 +46,15 @@ class Landscape:
         return self._interpolator
 
     @property
-    def size(self):
+    def size(self) -> int:
         return np.prod(self.param_resolutions)
 
     @property
-    def shape(self):
+    def shape(self) -> list:
         return self.param_resolutions.tolist()
 
     @property
-    def sampled_indices(self):
+    def sampled_indices(self) -> np.ndarray | None:
         if self._sampled_indices is None:
             return None
         return self._unravel_index(self._sampled_indices)
@@ -64,11 +64,11 @@ class Landscape:
         self._sample_indices = self.ravel_multi_index(indices)
 
     @property
-    def num_samples(self):
+    def num_samples(self) -> int:
         return 0 if self._sampled_indices is None else len(self._sampled_indices)
 
     @property
-    def sampling_fraction(self):
+    def sampling_fraction(self) -> float:
         return self.num_samples / self.size
 
     def _gen_axes(self) -> list[np.ndarray]:

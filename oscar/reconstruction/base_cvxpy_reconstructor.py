@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from math import prod, sqrt
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Any
 
 import cvxpy as cp
 import numpy as np
@@ -12,8 +12,8 @@ from .base_reconstructor import BaseReconstructor
 
 class BaseCvxPyReconstructor(BaseReconstructor):
     def __init__(self, solver: Optional[str] = None, **solver_kwargs):
-        self.solver = solver
-        self.solver_kwargs = solver_kwargs
+        self.solver: str | None = solver
+        self.solver_kwargs: dict[str, Any] = solver_kwargs
 
     def run(self, landscape: Landscape) -> np.ndarray:
         shape = landscape.shape
