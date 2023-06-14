@@ -25,5 +25,5 @@ class QiskitExecutor(BaseExecutor):
                 ansatz=algorithm.ansatz, operator=operator
             )
 
-    def run(self, params: np.ndarray) -> float:
+    def _run(self, params: np.ndarray) -> float:
         return self.evaluate_energy(params)

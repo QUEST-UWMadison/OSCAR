@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 import warnings
-from time import time
 from typing import TYPE_CHECKING, Callable, Iterable, Literal, Optional
 
 import numpy as np
@@ -11,8 +10,8 @@ from scipy.interpolate import RegularGridInterpolator
 from ..execution.base_executor import BaseExecutor
 
 if TYPE_CHECKING:
-    from ..reconstruction.base_reconstructor import BaseReconstructor
     from ..reconstruction import BPReconstructor
+    from ..reconstruction.base_reconstructor import BaseReconstructor
 
 
 class Landscape:
@@ -208,9 +207,4 @@ class Landscape:
         return np.ravel_multi_index(indices, self.param_resolutions)
 
     def _add_sampled_landscape(self):
-        raise NotImplementedError()
-
-    def visualize_2d(
-        self, which_landscape: Optional[Literal["true", "reconstructed", "both"]] = None
-    ):
         raise NotImplementedError()
