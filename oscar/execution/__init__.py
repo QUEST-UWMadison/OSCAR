@@ -1,2 +1,3 @@
+from .custom_executor import CustomExecutor
 from .interpolated_landscape_executor import InterpolatedLandscapeExecutor
 from .qiskit_executor import QiskitExecutor
