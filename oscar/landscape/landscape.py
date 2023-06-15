@@ -68,10 +68,6 @@ class Landscape:
             return None
         return self._unravel_index(self._sampled_indices)
 
-    @sampled_indices.setter
-    def sampled_indices(self, indices: Sequence[NDArray[np.int_]]):
-        self._sample_indices = self._ravel_multi_index(indices)
-
     @property
     def sampling_fraction(self) -> float:
         return self.num_samples / self.size
@@ -92,7 +88,7 @@ class Landscape:
         )
         return self._interpolator
 
-    def run_after_sample(
+    def sample_and_run(
         self,
         executor: BaseExecutor,
         sampling_fraction: float | None = None,
@@ -135,19 +131,15 @@ class Landscape:
     ) -> NDArray[np.float_]:
         if isinstance(param_indices, int):
             param_indices = [param_indices]
-        if self._sampled_indices is None:
-            self._sampled_indices = np.array(param_indices)
-        else:
-            self._sampled_indices = np.unique(
-                np.concatenate((self._sampled_indices, param_indices))
-            )
         # Commented since the current executor may not be the one used to run the true landscape
         # if self.true_landscape is not None:
-        #     return self.true_landscape.flat[param_indices]
-        return self._run(
+        #     result = self.true_landscape.flat[param_indices]
+        result = self._run(
             executor,
             self._flatten_param_grid()[param_indices],
         )
+        self._add_sampled_landscape(param_indices, result)
+        return result
 
     def reconstruct(self, reconstructor: BaseReconstructor | None = None) -> NDArray[np.float_]:
         if reconstructor is None:
@@ -172,8 +164,21 @@ class Landscape:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         pickle.dump(self, open(filename, "wb"))
 
-    def _add_sampled_landscape(self):
-        raise NotImplementedError()
+    def _add_sampled_landscape(
+        self, sampled_indices: NDArray[np.int_], sampled_landscape: NDArray[np.float_]
+    ) -> None:
+        sampled_indices = np.unique(sampled_indices)
+        if self._sampled_indices is None:
+            self._sampled_indices = np.array(sampled_indices)
+            self.sampled_landscape = sampled_landscape
+        else:
+            # TODO
+            raise NotImplementedError()
+            mask = np.isin(sampled_indices, self._sampled_indices, True, True)
+            run_indices = sampled_indices[mask]
+            self._sampled_indices = np.unique(
+                np.concatenate((self._sampled_indices, sampled_indices))
+            )
 
     def _get_landscape(
         self, which_landscape: Literal["true", "reconstructed", "auto"]

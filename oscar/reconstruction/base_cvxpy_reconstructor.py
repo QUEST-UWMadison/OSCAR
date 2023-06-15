@@ -21,7 +21,7 @@ class BaseCvxPyReconstructor(BaseReconstructor):
     def run(self, landscape: Landscape) -> NDArray[np.float_]:
         if landscape.sampled_landscape is None:
             raise RuntimeError(
-                "Sampled landscape is not present. Use `Landscape.run_after_sample()`, "
+                "Sampled landscape is not present. Use `Landscape.sample_and_run()`, "
                 "`Landscape.run_with_indices()`, or `Landscape.run_with_flatten_indices()`."
             )
         shape = landscape.shape
