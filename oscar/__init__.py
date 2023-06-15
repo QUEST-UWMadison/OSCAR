@@ -7,3 +7,4 @@ from .reconstruction import (
     BPDNVariantReconstructor,
     LassoReconstructor,
 )
+from .visualization import plot_2d_landscape
