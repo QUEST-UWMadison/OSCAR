@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import math
+import os
+import pickle
 import warnings
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Literal
@@ -199,6 +201,10 @@ class Landscape:
         else:
             metric = metric.upper()
             raise NotImplementedError()
+
+    def save(self, filename: str) -> None:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        pickle.dump(self, open(filename, "wb"))
 
     def _sample_indices(self, num_samples: int, seed: int | None = None) -> NDArray[np.int_]:
         return np.random.default_rng(seed).choice(self.size, num_samples, replace=False)
