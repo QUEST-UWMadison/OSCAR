@@ -20,10 +20,13 @@ class CustomExecutor(BaseExecutor):
     def run_batch(
         self,
         params_list: list[np.ndarray],
+        return_time: bool = False,
         callback: Callable[[np.ndarray, float, float], None] | None = None,
         *args,
         **kwargs
-    ) -> np.ndarray:
+    ) -> np.ndarray | tuple[np.ndarray, np.ndarray | None]:
         if self.batch_function is None:
             return super().run_batch(params_list, callback)
+        if return_time:
+            return self.batch_function(params_list, *args, **kwargs), None
         return self.batch_function(params_list, *args, **kwargs)
