@@ -1,9 +1,11 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from math import prod, sqrt
-from typing import Iterable, Optional, Any
+from typing import Any
 
 import cvxpy as cp
 import numpy as np
+from numpy.typing import NDArray
 from scipy.fftpack import idct
 
 from ..landscape.landscape import Landscape
@@ -11,11 +13,11 @@ from .base_reconstructor import BaseReconstructor
 
 
 class BaseCvxPyReconstructor(BaseReconstructor):
-    def __init__(self, solver: Optional[str] = None, **solver_kwargs):
+    def __init__(self, solver: str | None = None, **solver_kwargs) -> None:
         self.solver: str | None = solver
         self.solver_kwargs: dict[str, Any] = solver_kwargs
 
-    def run(self, landscape: Landscape) -> np.ndarray:
+    def run(self, landscape: Landscape) -> NDArray[np.float_]:
         shape = landscape.shape
         x = cp.Variable(landscape.size)
         self._build_optimization_problem(
@@ -28,7 +30,7 @@ class BaseCvxPyReconstructor(BaseReconstructor):
             x = idct(x, norm="ortho", axis=i)
         return x
 
-    def _build_idct_operator(self, shape: Iterable[int]) -> np.ndarray:
+    def _build_idct_operator(self, shape: Sequence[int]) -> NDArray[np.float_]:
         idct_operators = [idct(np.identity(n), norm="ortho", axis=0) for n in shape]
         a = idct_operators[0]
         for b in idct_operators[1:]:
@@ -37,11 +39,11 @@ class BaseCvxPyReconstructor(BaseReconstructor):
 
     @abstractmethod
     def _build_optimization_problem(
-        self, A: np.ndarray, x: cp.Variable, b: np.ndarray
+        self, A: NDArray[np.float_], x: cp.Variable, b: NDArray[np.float_]
     ) -> cp.Problem:
         pass
 
-    def _reshape_2D(self, shape: Iterable[int]) -> tuple[int, int]:
+    def _reshape_2D(self, shape: Sequence[int]) -> tuple[int, int]:
         """
         Reshape higher dimensions to 2D.
         No longer needed (hopefully).

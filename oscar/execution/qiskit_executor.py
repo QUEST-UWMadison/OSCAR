@@ -1,4 +1,7 @@
+from collections.abc import Sequence
+
 import numpy as np
+from numpy.typing import NDArray
 from qiskit.algorithms import VQE as OldVQE
 from qiskit.algorithms.minimum_eigensolvers import VQE, SamplingVQE
 from qiskit.opflow import OperatorBase
@@ -10,7 +13,7 @@ from .base_executor import BaseExecutor
 class QiskitExecutor(BaseExecutor):
     def __init__(
         self, algorithm: OldVQE | VQE | SamplingVQE, operator: OperatorBase | BaseOperator
-    ):
+    ) -> None:
         self.algorithm: OldVQE | VQE | SamplingVQE = algorithm
         self.operator: OperatorBase | BaseOperator = operator
         algorithm._check_operator_ansatz(operator)
@@ -25,5 +28,5 @@ class QiskitExecutor(BaseExecutor):
                 ansatz=algorithm.ansatz, operator=operator
             )
 
-    def _run(self, params: np.ndarray) -> float:
+    def _run(self, params: Sequence[float]) -> float:
         return self.evaluate_energy(params)

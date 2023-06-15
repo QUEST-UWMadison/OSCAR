@@ -1,22 +1,27 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Sequence
 from copy import deepcopy
 from time import time
-from typing import Callable, Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
+from numpy.typing import NDArray
 
-from ..optimization import Trace
+if TYPE_CHECKING:
+    from ..optimization import Trace
 
 
 class BaseExecutor(ABC):
     @abstractmethod
-    def _run(self, params: np.ndarray) -> float:
+    def _run(self, params: Sequence[float]) -> float:
         pass
 
     def run(
         self,
-        params: np.ndarray,
-        callback: Optional[Callable[[np.ndarray, float, float], None]] = None,
+        params: Sequence[float],
+        callback: Callable[[Sequence[float], float, float], None] | None = None,
         return_time: bool = False,
     ) -> float | tuple[float, float]:
         start_time = time()
@@ -25,15 +30,15 @@ class BaseExecutor(ABC):
         if callback is not None:
             callback(params, value, runtime)
         if return_time:
-            return value, time
+            return value, runtime
         return value
 
     def run_batch(
         self,
-        params_list: list[np.ndarray],
-        callback: Optional[Callable[[np.ndarray, float, float], None]] = None,
+        params_list: Sequence[Sequence[float]],
+        callback: Callable[[Sequence[float], float, float], None] | None = None,
         return_time: bool = False,
-    ) -> np.ndarray | tuple[np.ndarray, np.ndarray | None]:
+    ) -> NDArray[np.float_] | tuple[NDArray[np.float_], NDArray[np.float_] | None]:
         result = np.array([self.run(params, callback, return_time) for params in params_list])
         if return_time:
             return result.T[0], result.T[1]
@@ -42,12 +47,12 @@ class BaseExecutor(ABC):
     def run_with_trace(
         self,
         trace: Trace,
-        callback: Optional[Callable[[np.ndarray, float, float], None]] = None,
+        callback: Callable[[Sequence[float], float, float], None] | None = None,
     ) -> Trace:
         new_trace = Trace()
         new_trace.params_trace = deepcopy(trace.params_trace)
         value, runtime = self.run_batch(trace.params_trace, callback, True)
-        new_trace.params_value = value.to_list()
+        new_trace.value_trace = value.tolist()
         if isinstance(runtime, np.ndarray):
-            new_trace.time_trace = runtime.to_list()
+            new_trace.time_trace = runtime.tolist()
         return new_trace
