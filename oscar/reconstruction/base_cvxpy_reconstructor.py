@@ -1,3 +1,4 @@
+import warnings
 from abc import abstractmethod
 from collections.abc import Sequence
 from math import prod, sqrt
@@ -18,6 +19,11 @@ class BaseCvxPyReconstructor(BaseReconstructor):
         self.solver_kwargs: dict[str, Any] = solver_kwargs
 
     def run(self, landscape: Landscape) -> NDArray[np.float_]:
+        if landscape.sampled_landscape is None:
+            raise RuntimeError(
+                "Sampled landscape is not present. Use `Landscape.run_after_sample()`, "
+                "`Landscape.run_with_indices()`, or `Landscape.run_with_flatten_indices()`."
+            )
         shape = landscape.shape
         x = cp.Variable(landscape.size)
         self._build_optimization_problem(
