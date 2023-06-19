@@ -130,3 +130,6 @@ dmypy.json
 
 # IDEs
 .vscode/
+
+# Dynamic versioning
+oscar/_version.py
