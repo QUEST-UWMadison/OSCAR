@@ -1,7 +1,7 @@
-# OSCAR: cOmpressed Sensing based Cost lAndscape Reconstruction
+# OSCAR: configure and debug variational quantum algorithms efficiently
 OSCAR leverages compressed sensing to reconstruct the landscape of variational quantum algorithms, using only a small fraction of all circuit executions needed for the entire landscape.
 
-This is a package accompanying the paper [TODO](). For our original research implementation and record, please refer to [this repo](https://github.com/kunliu7/oscar/).
+This is a package accompanying the paper [Enabling High Performance Debugging for Variational Quantum Algorithms using Compressed Sensing](https://doi.org/10.1145/3579371.3589044). For our original research implementation and record, please refer to [https://github.com/kunliu7/oscar/](https://github.com/kunliu7/oscar/). This repo is a rewrite as a user-friendly package, and some of the methods have been substantially improved in comparison to the version used in the paper.
 
 ## Install
 ```
@@ -61,7 +61,7 @@ Define an executor responsible for computing the landscape data with the previou
 
 ```python
 executor = QiskitExecutor(algorithm, H)
-landscape.run_after_sample(executor, sampling_fraction = 1 / 16)
+landscape.sample_and_run(executor, sampling_fraction = 1 / 16)
 ```
 
 
