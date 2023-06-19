@@ -5,7 +5,7 @@ This is a package accompanying the paper [Enabling High Performance Debugging fo
 
 ## Install
 ```
-pip install git+https://github.com/haoty/QSCAR
+pip install git+https://github.com/haoty/OSCAR
 ```
 
 ## Get Started
