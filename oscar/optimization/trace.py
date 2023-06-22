@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from numpy.typing import NDArray
 from qiskit.algorithms.optimizers import OptimizerResult
+from SQCommon import Result, Stats
 
 
 @dataclass
@@ -26,3 +27,9 @@ class Trace:
         self.optimal_value = result.fun
         self.num_iters = result.nit
         self.num_fun_evals = result.nfev
+
+    def update_with_skquant_result(self, result: tuple[Result, NDArray[np.float_]]) -> None:
+        self.optimal_params = result[0].optpar
+        self.optimal_value = result[0].optval
+        self.num_fun_evals = len(result[1])
+        self.num_iters = len(result[1])
