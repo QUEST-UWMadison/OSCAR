@@ -117,7 +117,7 @@ landscape.run_all(qiskit_executor)
 figure = plot_2d_landscape(landscape, which_landscape="true")
 ```
 
-![https://github.com/HaoTy/OSCAR/assets/get_started_2.png](https://github.com/HaoTy/OSCAR/blob/main/figs/get_started_2.png?raw=true)
+![https://github.com/HaoTy/OSCAR/assets/get_started_2.png](https://github.com/HaoTy/OSCAR/blob/main/assets/get_started_2.png?raw=true)
 
 ### Interpolation
 OSCAR can interpolate the grid points to get a continuous approximation of the landscape, which can in turn serve as an executor for optimizers and other purposes.
@@ -149,9 +149,18 @@ Compare with the optimization where the values are calculated by actual circuit 
 optimize_result(qiskit_executor)
 ```
 
-![https://github.com/HaoTy/OSCAR/assets/get_started_4.png](https://github.com/HaoTy/OSCAR/blob/main/assets/get_started_1.png?raw=true)
+![https://github.com/HaoTy/OSCAR/assets/get_started_4.png](https://github.com/HaoTy/OSCAR/blob/main/assets/get_started_4.png?raw=true)
 
 We see that the results are very close, while the time for optimizing with the interpolated landscape is negligible compared to the actual optimization.
+
+Landscapes can be easily saved for later retrieval.
+```python
+import numpy as np
+
+filename = f"../data/landscapes/p=1-{n=}-{bounds}-{resolution}.pckl"
+landscape.save(filename)
+landscape = np.load(filename, allow_pickle=True)
+```
 
 ## Roadmap
 - Execution
