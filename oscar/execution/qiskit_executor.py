@@ -1,7 +1,5 @@
 from collections.abc import Sequence
 
-import numpy as np
-from numpy.typing import NDArray
 from qiskit.algorithms import VQE as OldVQE
 from qiskit.algorithms.minimum_eigensolvers import VQE, SamplingVQE
 from qiskit.opflow import OperatorBase

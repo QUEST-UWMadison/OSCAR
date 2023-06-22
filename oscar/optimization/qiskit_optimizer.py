@@ -23,7 +23,7 @@ class QiskitOptimizer(BaseOptimizer):
     ) -> tuple[Trace, OptimizerResult]:
         trace = Trace()
         result = self.optimizer.minimize(
-            partial(executor.run, callback=trace.append), initial_point, jacobian, bounds
+            partial(executor.run, callback=trace.append), np.array(initial_point), jacobian, bounds
         )
         trace.update_with_qiskit_result(result)
         return trace, result

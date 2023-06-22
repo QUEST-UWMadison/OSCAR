@@ -12,9 +12,9 @@ from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 
 from ..execution.base_executor import BaseExecutor
+from ..reconstruction import BPReconstructor
 
 if TYPE_CHECKING:
-    from ..reconstruction import BPReconstructor
     from ..reconstruction.base_reconstructor import BaseReconstructor
 
 
@@ -53,6 +53,24 @@ class Landscape:
     @property
     def num_samples(self) -> int:
         return 0 if self._sampled_indices is None else len(self._sampled_indices)
+
+    @property
+    def optimal_params(self) -> NDArray[np.float_]:
+        lower_bounds, upper_bounds = self.param_bounds.T  # TODO: arbitrary dimension
+        return (
+            self.optimal_point_indices
+            / self.param_resolutions[:, np.newaxis]
+            * (upper_bounds - lower_bounds)[:, np.newaxis]
+            + lower_bounds[:, np.newaxis]
+        )
+
+    @property
+    def optimal_point_indices(self) -> NDArray[np.int_]:
+        return self._unravel_index([np.argmin(self._get_landscape())])  # TODO: format
+
+    @property
+    def optimal_value(self) -> float:
+        return np.min(self._get_landscape())
 
     @property
     def shape(self) -> list:
@@ -167,41 +185,18 @@ class Landscape:
     def _add_sampled_landscape(
         self, sampled_indices: NDArray[np.int_], sampled_landscape: NDArray[np.float_]
     ) -> None:
-        sampled_indices = np.unique(sampled_indices)
-        if self._sampled_indices is None:
-            self._sampled_indices = np.array(sampled_indices)
-            self.sampled_landscape = sampled_landscape
-        else:
-            # TODO
-            raise NotImplementedError()
-            mask = np.isin(sampled_indices, self._sampled_indices, True, True)
-            run_indices = sampled_indices[mask]
-            self._sampled_indices = np.unique(
-                np.concatenate((self._sampled_indices, sampled_indices))
-            )
-
-    def _get_landscape(
-        self, which_landscape: Literal["true", "reconstructed", "auto"]
-    ) -> NDArray[np.float_]:
-        if which_landscape == "auto":
-            if self.true_landscape is not None:
-                return self.true_landscape
-            which_landscape = "reconstructed"
-        if which_landscape == "true":
-            if self.true_landscape is None:
-                raise RuntimeError(
-                    "The true landscape is not present. Use `Landscape.run_all()` "
-                    "or directly supply it to `Landscape.true_landscape`."
-                )
-            return self.true_landscape
-        if which_landscape == "reconstructed":
-            if self.reconstructed_landscape is None:
-                warnings.warn(
-                    "The reconstructed landscape is not present. "
-                    "Attempting to reconstruct with default configurations..."
-                )
-                self.reconstruct()
-            return self.reconstructed_landscape
+        # sampled_indices = np.unique(sampled_indices)
+        # if self._sampled_indices is None:
+        self._sampled_indices = np.array(sampled_indices)
+        self.sampled_landscape = sampled_landscape
+        # else:
+        #     # TODO
+        #     raise NotImplementedError()
+        #     mask = np.isin(sampled_indices, self._sampled_indices, True, True)
+        #     run_indices = sampled_indices[mask]
+        #     self._sampled_indices = np.unique(
+        #         np.concatenate((self._sampled_indices, sampled_indices))
+        #     )
 
     def _flatten_param_grid(self) -> NDArray[np.float_]:
         return self.param_grid.reshape(-1, self.num_params)
@@ -223,6 +218,29 @@ class Landscape:
                 indexing="ij",
             )
         ).transpose((*range(1, self.num_params + 1), 0))
+
+    def _get_landscape(
+        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
+    ) -> NDArray[np.float_]:
+        if which_landscape == "auto":
+            if self.true_landscape is not None:
+                return self.true_landscape
+            which_landscape = "reconstructed"
+        if which_landscape == "true":
+            if self.true_landscape is None:
+                raise RuntimeError(
+                    "The true landscape is not present. Use `Landscape.run_all()` "
+                    "or directly supply it to `Landscape.true_landscape`."
+                )
+            return self.true_landscape
+        if which_landscape == "reconstructed":
+            if self.reconstructed_landscape is None:
+                warnings.warn(
+                    "The reconstructed landscape is not present. "
+                    "Attempting to reconstruct with default configurations..."
+                )
+                self.reconstruct()
+            return self.reconstructed_landscape
 
     def _ravel_multi_index(self, indices: Sequence[NDArray[np.int_]]) -> NDArray[np.int_]:
         return np.ravel_multi_index(indices, self.param_resolutions)

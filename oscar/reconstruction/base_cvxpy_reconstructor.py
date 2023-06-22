@@ -1,15 +1,18 @@
-import warnings
+from __future__ import annotations
+
 from abc import abstractmethod
 from collections.abc import Sequence
 from math import prod, sqrt
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import cvxpy as cp
 import numpy as np
 from numpy.typing import NDArray
 from scipy.fftpack import idct
 
-from ..landscape.landscape import Landscape
+if TYPE_CHECKING:
+    from ..landscape.landscape import Landscape
+
 from .base_reconstructor import BaseReconstructor
 
 

@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
 
-from ..landscape.landscape import Landscape
+if TYPE_CHECKING:
+    from ..landscape.landscape import Landscape
 
 
 class BaseReconstructor(ABC):

@@ -25,22 +25,10 @@ def plot_2d_landscape(
         origin="lower",
         interpolation="none",
     )
-    plt.xlabel("β")
-    plt.ylabel("γ", rotation=0, va="center")
+    # Can't tell the order of gamma and beta, or really, if it's QAOA
+    # plt.xlabel("β")
+    # plt.ylabel("γ", rotation=0, va="center")
     plt.colorbar()
-    lower_bounds, upper_bounds = landscape.param_bounds.T
-    plt.scatter(
-        *(
-            landscape._unravel_index([np.argmin(landscape_array)])
-            / landscape.param_resolutions[:, np.newaxis]
-            * (upper_bounds - lower_bounds)[:, np.newaxis]
-            + lower_bounds[:, np.newaxis]
-        ),
-        marker="o",
-        color="white",
-        s=5,
-        label="optimal point",
-    )
     if trace is not None:
         plt.plot(
             *np.array(trace.params_trace).T,
@@ -58,6 +46,19 @@ def plot_2d_landscape(
             cmap="autumn",
             s=15,
         )
+    lower_bounds, upper_bounds = landscape.param_bounds.T
+    plt.scatter(
+        *(
+            landscape._unravel_index([np.argmin(landscape_array)])
+            / landscape.param_resolutions[:, np.newaxis]
+            * (upper_bounds - lower_bounds)[:, np.newaxis]
+            + lower_bounds[:, np.newaxis]
+        ),
+        marker="*",
+        color="white",
+        s=20,
+        label="grid minima",
+    )
     plt.legend()
     if show:
         plt.show()
