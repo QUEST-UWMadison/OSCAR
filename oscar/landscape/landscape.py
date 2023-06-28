@@ -62,7 +62,7 @@ class Landscape:
             / self.param_resolutions[:, np.newaxis]
             * (upper_bounds - lower_bounds)[:, np.newaxis]
             + lower_bounds[:, np.newaxis]
-        )
+        ).flatten()
 
     @property
     def optimal_point_indices(self) -> NDArray[np.int_]:
