@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from numpy.typing import NDArray
 from qiskit.algorithms.optimizers import OptimizerResult
-from SQCommon import Result, Stats
+from SQCommon import Result
 
 
 @dataclass
@@ -23,6 +23,12 @@ class Trace:
         self.params_trace.append(np.array(params))
         self.value_trace.append(value)
         self.time_trace.append(time)
+
+    def print_result(self) -> None:
+        print(f"Total time: {sum(self.time_trace)}")
+        print("Optimal parameters reported: ", self.optimal_params)
+        print("Optimal value reported: ", self.optimal_value)
+        print("Number of evaluations: ", self.num_fun_evals)
 
     def update_with_qiskit_result(self, result: OptimizerResult) -> None:
         self.optimal_params = result.x
