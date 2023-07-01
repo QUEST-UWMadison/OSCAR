@@ -1,4 +1,6 @@
-from collections.abc import Callable, Sequence
+from __future__ import annotations
+
+from collections.abc import Sequence
 from functools import partial
 from typing import Literal
 

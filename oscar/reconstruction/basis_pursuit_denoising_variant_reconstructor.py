@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import cvxpy as cp
 import numpy as np
 from numpy.typing import NDArray

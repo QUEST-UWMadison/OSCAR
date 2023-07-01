@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Sequence
 
 import numpy as np
@@ -26,7 +28,7 @@ class CustomExecutor(BaseExecutor):
         return_time: bool = False,
         callback: Callable[[Sequence[float], float, float], None] | None = None,
         *args,
-        **kwargs
+        **kwargs,
     ) -> NDArray[np.float_] | tuple[NDArray[np.float_], NDArray[np.float_] | None]:
         if self.batch_function is None:
             return super().run_batch(params_list, callback)
