@@ -48,14 +48,8 @@ def plot_2d_landscape(
             cmap="autumn",
             s=15,
         )
-    lower_bounds, upper_bounds = landscape.param_bounds.T
     plt.scatter(
-        *(
-            landscape._unravel_index([np.argmin(landscape_array)])
-            / landscape.param_resolutions[:, np.newaxis]
-            * (upper_bounds - lower_bounds)[:, np.newaxis]
-            + lower_bounds[:, np.newaxis]
-        ),
+        *landscape.optimal_params(which_landscape),
         marker="*",
         color="white",
         s=20,
