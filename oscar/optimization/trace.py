@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from pdfo import OptimizeResult
+    from SQCommon import Result
 from qiskit.algorithms.optimizers import OptimizerResult
-from SQCommon import Result
 
 
 @dataclass
@@ -41,3 +45,9 @@ class Trace:
         self.optimal_value = result[0].optval
         self.num_fun_evals = len(result[1])
         self.num_iters = len(result[1])
+
+    def update_with_pdfo_result(self, result: OptimizeResult) -> None:
+        self.optimal_params = result.x
+        self.optimal_value = result.fun
+        self.num_iters = result.nfev
+        self.num_fun_evals = result.nfev

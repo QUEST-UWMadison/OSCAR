@@ -123,19 +123,17 @@ figure = plot_2d_landscape(landscape, which_landscape="true")
 OSCAR can interpolate the grid points to get a continuous approximation of the landscape, which can in turn serve as an executor for optimizers and other purposes.
 
 ```python
-from oscar import ScikitQuantOptimizer, InterpolatedLandscapeExecutor
+from oscar import QiskitOptimizer, InterpolatedLandscapeExecutor
+from qiskit.algorithms.optimizers import COBYLA
 
 landscape.interpolate(method="slinear", fill_value=1)
 itpl_executor = InterpolatedLandscapeExecutor(landscape)
 
 def optimize_result(executor):
-    trace, original_result = ScikitQuantOptimizer("bobyqa", budget=100).run(
+    trace, original_result = QiskitOptimizer(COBYLA(100, rhobeg=0.3)).run(
         itpl_executor, initial_point=[0.1, -0.1], bounds=bounds
     )
-    print(f"Total time: {sum(trace.time_trace)}")
-    print("Optimal parameters reported: ", trace.optimal_params)
-    print("Optimal value reported: ", trace.optimal_value)
-    print("Number of evaluations: ", trace.num_fun_evals)
+    trace.print_result()
     plot_2d_landscape(landscape, trace)
 
 optimize_result(itpl_executor)
