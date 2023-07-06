@@ -13,6 +13,6 @@ from .trace import Trace
 class BaseOptimizer(ABC):
     @abstractmethod
     def run(
-        self, executor: BaseExecutor, initial_point: Sequence[float]
+        self, executor: BaseExecutor, initial_point: Sequence[float], *args, **kwargs
     ) -> tuple[Trace, OptimizerResult | OptimizeResult]:
         pass

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class BaseExecutor(ABC):
     @abstractmethod
-    def _run(self, params: Sequence[float]) -> float:
+    def _run(self, params: Sequence[float], *args, **kwargs) -> float:
         pass
 
     def run(
@@ -23,9 +23,11 @@ class BaseExecutor(ABC):
         params: Sequence[float],
         callback: Callable[[Sequence[float], float, float], None] | None = None,
         return_time: bool = False,
+        *args,
+        **kwargs,
     ) -> float | tuple[float, float]:
         start_time = time()
-        value = self._run(params)
+        value = self._run(params, *args, **kwargs)
         runtime = time() - start_time
         if callback is not None:
             callback(params, value, runtime)
@@ -38,8 +40,12 @@ class BaseExecutor(ABC):
         params_list: Sequence[Sequence[float]],
         callback: Callable[[Sequence[float], float, float], None] | None = None,
         return_time: bool = False,
+        *args,
+        **kwargs,
     ) -> NDArray[np.float_] | tuple[NDArray[np.float_], NDArray[np.float_] | None]:
-        result = np.array([self.run(params, callback, return_time) for params in params_list])
+        result = np.array(
+            [self.run(params, callback, return_time, *args, **kwargs) for params in params_list]
+        )
         if return_time:
             return result.T[0], result.T[1]
         return result
@@ -48,10 +54,12 @@ class BaseExecutor(ABC):
         self,
         trace: Trace,
         callback: Callable[[Sequence[float], float, float], None] | None = None,
+        *args,
+        **kwargs,
     ) -> Trace:
         new_trace = Trace()
         new_trace.params_trace = deepcopy(trace.params_trace)
-        value, runtime = self.run_batch(trace.params_trace, callback, True)
+        value, runtime = self.run_batch(trace.params_trace, callback, True, *args, **kwargs)
         new_trace.value_trace = value.tolist()
         if isinstance(runtime, np.ndarray):
             new_trace.time_trace = runtime.tolist()

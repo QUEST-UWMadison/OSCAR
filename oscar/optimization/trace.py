@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Mapping
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -33,6 +33,12 @@ class Trace:
         print("Optimal parameters reported: ", self.optimal_params)
         print("Optimal value reported: ", self.optimal_value)
         print("Number of evaluations: ", self.num_fun_evals)
+
+    def update_with_custom_result(self, result: Mapping[str, Any]) -> None:
+        self.optimal_params = result["optimal_params"]
+        self.optimal_value = result["optimal_value"]
+        self.num_iters = result["num_iters"]
+        self.num_fun_evals = result["num_fun_evals"]
 
     def update_with_qiskit_result(self, result: OptimizerResult) -> None:
         self.optimal_params = result.x
