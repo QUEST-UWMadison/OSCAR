@@ -55,32 +55,6 @@ class Landscape:
         return 0 if self._sampled_indices is None else len(self._sampled_indices)
 
     @property
-    def optimal_params(
-        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
-    ) -> NDArray[np.float_]:
-        lower_bounds, upper_bounds = self.param_bounds.T  # TODO: arbitrary dimension
-        return (
-            self.optimal_point_indices(which_landscape)
-            / self.param_resolutions[:, np.newaxis]
-            * (upper_bounds - lower_bounds)[:, np.newaxis]
-            + lower_bounds[:, np.newaxis]
-        ).flatten()
-
-    @property
-    def optimal_point_indices(
-        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
-    ) -> NDArray[np.int_]:
-        return self._unravel_index(
-            [np.argmin(self._get_landscape(which_landscape))]
-        )  # TODO: format
-
-    @property
-    def optimal_value(
-        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
-    ) -> float:
-        return np.min(self._get_landscape(which_landscape))
-
-    @property
     def shape(self) -> list:
         return self.param_resolutions.tolist()
 
@@ -113,6 +87,29 @@ class Landscape:
             fill_value,
         )
         return self._interpolator
+
+    def optimal_params(
+        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
+    ) -> NDArray[np.float_]:
+        lower_bounds, upper_bounds = self.param_bounds.T  # TODO: arbitrary dimension
+        return (
+            self.optimal_point_indices(which_landscape)
+            / self.param_resolutions[:, np.newaxis]
+            * (upper_bounds - lower_bounds)[:, np.newaxis]
+            + lower_bounds[:, np.newaxis]
+        ).flatten()
+
+    def optimal_point_indices(
+        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
+    ) -> NDArray[np.int_]:
+        return self._unravel_index(
+            [np.argmin(self._get_landscape(which_landscape))]
+        )  # TODO: format
+
+    def optimal_value(
+        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
+    ) -> float:
+        return np.min(self._get_landscape(which_landscape))
 
     def sample_and_run(
         self,
