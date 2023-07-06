@@ -16,6 +16,12 @@ class CustomOptimizer(BaseOptimizer):
     def __init__(self, optimizer: Callable[[NDArray[np.float_]], Mapping[str, Any]]) -> None:
         self.optimizer: Callable[[Sequence[float]], Mapping[str, Any]] = optimizer
 
+    def name(self, include_library_name: bool = True) -> str:
+        name = self.optimizer.__name__
+        if include_library_name:
+            name += " (Custom)"
+        return name
+
     def run(
         self, executor: BaseExecutor, initial_point: Sequence[float], *args, **kwargs
     ) -> tuple[Trace, Mapping[str, Any]]:

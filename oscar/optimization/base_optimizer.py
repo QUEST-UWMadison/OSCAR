@@ -12,6 +12,10 @@ from .trace import Trace
 
 class BaseOptimizer(ABC):
     @abstractmethod
+    def name(self, include_library_name: bool = True) -> str:
+        pass
+
+    @abstractmethod
     def run(
         self, executor: BaseExecutor, initial_point: Sequence[float], *args, **kwargs
     ) -> tuple[Trace, OptimizerResult | OptimizeResult]:

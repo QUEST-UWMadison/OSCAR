@@ -20,6 +20,12 @@ try:
             self.method: Literal["imfil", "bobyqa", "snobfit", "nomad"] = method
             self.budget: int = budget
 
+        def name(self, include_library_name: bool = True) -> str:
+            name = self.method
+            if include_library_name:
+                name += " (Scikit-Quant)"
+            return name
+
         def run(
             self,
             executor: BaseExecutor,

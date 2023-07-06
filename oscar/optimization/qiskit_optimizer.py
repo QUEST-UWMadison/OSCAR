@@ -16,6 +16,12 @@ class QiskitOptimizer(BaseOptimizer):
     def __init__(self, qiskit_optimizer: Optimizer) -> None:
         self.optimizer: Optimizer = qiskit_optimizer
 
+    def name(self, include_library_name: bool = True) -> str:
+        name = self.optimizer.__name__
+        if include_library_name:
+            name += " (Qiskit)"
+        return name
+
     def run(
         self,
         executor: BaseExecutor,

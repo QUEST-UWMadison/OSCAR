@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence, Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -10,6 +10,8 @@ from numpy.typing import NDArray
 if TYPE_CHECKING:
     from pdfo import OptimizeResult
     from SQCommon import Result
+
+from nlopt import opt
 from qiskit.algorithms.optimizers import OptimizerResult
 
 
@@ -39,6 +41,12 @@ class Trace:
         self.optimal_value = result["optimal_value"]
         self.num_iters = result["num_iters"]
         self.num_fun_evals = result["num_fun_evals"]
+
+    def update_with_nlopt_result(self, result: opt) -> None:
+        self.optimal_params = result.last_optimize_result()
+        self.optimal_value = result.last_optimum_value()
+        self.num_iters = result.get_numevals()
+        self.num_fun_evals = result.get_numevals()
 
     def update_with_qiskit_result(self, result: OptimizerResult) -> None:
         self.optimal_params = result.x
