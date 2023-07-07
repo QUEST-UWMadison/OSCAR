@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from functools import partial
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
 from qiskit.algorithms.optimizers import Optimizer, OptimizerResult
 
-from ..execution.base_executor import BaseExecutor
 from .base_optimizer import BaseOptimizer
 from .trace import Trace
+
+if TYPE_CHECKING:
+    from ..execution.base_executor import BaseExecutor
 
 
 class QiskitOptimizer(BaseOptimizer):

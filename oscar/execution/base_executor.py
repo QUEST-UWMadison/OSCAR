@@ -4,13 +4,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from copy import deepcopy
 from time import time
-from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
 
-if TYPE_CHECKING:
-    from ..optimization import Trace
+from ..optimization import Trace
 
 
 class BaseExecutor(ABC):

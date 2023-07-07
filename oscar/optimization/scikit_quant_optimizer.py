@@ -3,15 +3,17 @@ from __future__ import annotations
 try:
     from collections.abc import Sequence
     from functools import partial
-    from typing import Literal
+    from typing import TYPE_CHECKING, Literal
 
     import numpy as np
     from skquant.opt import minimize
     from SQCommon import Result
 
-    from ..execution.base_executor import BaseExecutor
     from .base_optimizer import BaseOptimizer
     from .trace import Trace
+
+    if TYPE_CHECKING:
+        from ..execution.base_executor import BaseExecutor
 
     class ScikitQuantOptimizer(BaseOptimizer):
         def __init__(
