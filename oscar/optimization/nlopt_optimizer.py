@@ -28,7 +28,13 @@ class NLoptOptimizer(BaseOptimizer):
         initial_point: Sequence[float],
     ) -> tuple[Trace, opt]:
         trace = Trace()
-        self.optimizer.set_min_objective(partial(executor.run, callback=trace.append))
-        self.optimizer.optimize(np.array(initial_point))
-        trace.update_with_nlopt_result(self.optimizer)
+
+        def objective_wrapper(params: Sequence[float], gradient: NDArray[np.float_]) -> float:
+            if gradient.size > 0:
+                raise NotImplementedError("NLopt gradient-based algorithms are not supported yet.")
+            return executor.run(params, callback=trace.append)
+
+        self.optimizer.set_min_objective(objective_wrapper)
+        optimal_params = self.optimizer.optimize(np.array(initial_point))
+        trace.update_with_nlopt_result(self.optimizer, optimal_params)
         return trace, self.optimizer

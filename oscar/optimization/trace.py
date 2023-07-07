@@ -42,8 +42,8 @@ class Trace:
         self.num_iters = result["num_iters"]
         self.num_fun_evals = result["num_fun_evals"]
 
-    def update_with_nlopt_result(self, result: opt) -> None:
-        self.optimal_params = result.last_optimize_result()
+    def update_with_nlopt_result(self, result: opt, optimal_params: NDArray[np.float_]) -> None:
+        self.optimal_params = optimal_params
         self.optimal_value = result.last_optimum_value()
         self.num_iters = result.get_numevals()
         self.num_fun_evals = result.get_numevals()
