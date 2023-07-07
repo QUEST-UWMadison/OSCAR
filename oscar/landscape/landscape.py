@@ -177,7 +177,7 @@ class Landscape:
     ) -> float:
         true_landscape = self._get_landscape("true")
         reconstructed_landscape = self._get_landscape("reconstructed")
-        if isinstance(metric, callable):
+        if isinstance(metric, Callable):
             return metric(true_landscape, reconstructed_landscape)
         else:
             metric = metric.upper()
@@ -246,6 +246,7 @@ class Landscape:
                 )
                 self.reconstruct()
             return self.reconstructed_landscape
+        raise ValueError("Incorrect value for `which_landscape`")
 
     def _ravel_multi_index(self, indices: Sequence[NDArray[np.int_]]) -> NDArray[np.int_]:
         return np.ravel_multi_index(indices, self.param_resolutions)

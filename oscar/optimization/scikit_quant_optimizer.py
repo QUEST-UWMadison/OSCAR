@@ -23,7 +23,7 @@ try:
             self.budget: int = budget
 
         def name(self, include_library_name: bool = True) -> str:
-            name = self.method
+            name: str = self.method
             if include_library_name:
                 name += " (Scikit-Quant)"
             return name
