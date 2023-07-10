@@ -25,8 +25,8 @@ class CustomExecutor(BaseExecutor):
     def run_batch(
         self,
         params_list: Sequence[Sequence[float]],
-        return_time: bool = False,
         callback: Callable[[Sequence[float], float, float], None] | None = None,
+        return_time: bool = False,
         *args,
         **kwargs,
     ) -> NDArray[np.float_] | tuple[NDArray[np.float_], NDArray[np.float_] | None]:

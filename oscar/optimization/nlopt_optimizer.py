@@ -25,9 +25,7 @@ class NLoptOptimizer(BaseOptimizer):
         return name
 
     def run(
-        self,
-        executor: BaseExecutor,
-        initial_point: Sequence[float],
+        self, executor: BaseExecutor, initial_point: Sequence[float], *args, **kwargs
     ) -> tuple[Trace, opt]:
         trace = Trace()
 
@@ -37,6 +35,6 @@ class NLoptOptimizer(BaseOptimizer):
             return executor.run(params, callback=trace.append)
 
         self.optimizer.set_min_objective(objective_wrapper)
-        optimal_params = self.optimizer.optimize(np.array(initial_point))
+        optimal_params = self.optimizer.optimize(np.array(initial_point), *args, **kwargs)
         trace.update_with_nlopt_result(self.optimizer, optimal_params)
         return trace, self.optimizer

@@ -205,7 +205,7 @@ class Landscape:
     ) -> float:
         true_landscape = self.get_landscape("true")
         reconstructed_landscape = self.get_landscape("reconstructed")
-        if isinstance(metric, Callable):
+        if callable(metric):
             return metric(true_landscape, reconstructed_landscape)
         else:
             metric = metric.upper()
