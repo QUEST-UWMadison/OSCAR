@@ -107,7 +107,7 @@ landscape.reconstruct(BPDNReconstructor(solver = None)) # choose and config a de
 figure = plot_2d_landscape(landscape, which_landscape="reconstructed")
 ```
 
-![https://github.com/HaoTy/OSCAR/assets/get_started_1.png](https://github.com/HaoTy/OSCAR/blob/main/assets/get_started_1.png?raw=true)
+![assets/get_started_1.png](assets/get_started_1.png?raw=true)
 
 Run the true landscape and compare.
 
@@ -117,7 +117,7 @@ landscape.run_all(qiskit_executor)
 figure = plot_2d_landscape(landscape, which_landscape="true")
 ```
 
-![https://github.com/HaoTy/OSCAR/assets/get_started_2.png](https://github.com/HaoTy/OSCAR/blob/main/assets/get_started_2.png?raw=true)
+![assets/get_started_2.png](assets/get_started_2.png?raw=true)
 
 ### Interpolation
 OSCAR can interpolate the grid points to get a continuous approximation of the landscape, which can in turn serve as an executor for optimizers and other purposes.
@@ -139,7 +139,7 @@ def optimize_result(executor):
 optimize_result(itpl_executor)
 ```
 
-![https://github.com/HaoTy/OSCAR/assets/get_started_3.png](https://github.com/HaoTy/OSCAR/blob/main/assets/get_started_3.png?raw=true)
+![assets/get_started_3.png](assets/get_started_3.png?raw=true)
 
 Compare with the optimization where the values are calculated by actual circuit executions.
 
@@ -147,7 +147,7 @@ Compare with the optimization where the values are calculated by actual circuit 
 optimize_result(qiskit_executor)
 ```
 
-![https://github.com/HaoTy/OSCAR/assets/get_started_4.png](https://github.com/HaoTy/OSCAR/blob/main/assets/get_started_4.png?raw=true)
+![assets/get_started_4.png](assets/get_started_4.png?raw=true)
 
 We see that the results are very close, while the time for optimizing with the interpolated landscape is negligible compared to the actual optimization.
 
