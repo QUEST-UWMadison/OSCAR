@@ -7,5 +7,5 @@ from .trace import Trace
 
 try:
     from .scikit_quant_optimizer import ScikitQuantOptimizer
-except:
+except ImportError:
     pass

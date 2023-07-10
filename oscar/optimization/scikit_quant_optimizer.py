@@ -49,5 +49,5 @@ try:
             trace.update_with_skquant_result(result)
             return trace, result
 
-except:
+except ImportError:
     pass

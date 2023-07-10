@@ -13,5 +13,5 @@ from .visualization import plot_2d_landscape
 
 try:
     from .optimization import ScikitQuantOptimizer
-except:
+except ImportError:
     pass
