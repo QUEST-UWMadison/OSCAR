@@ -41,6 +41,10 @@ class Landscape:
         self._interpolator: RegularGridInterpolator | None = None
 
     @property
+    def landscape(self) -> NDArray[np.float_]:
+        return self.get_landscape("auto")
+
+    @property
     def interpolator(self) -> RegularGridInterpolator:
         if self._interpolator is None:
             warnings.warn(
@@ -72,13 +76,37 @@ class Landscape:
     def sampling_fraction(self) -> float:
         return self.num_samples / self.size
 
+    def get_landscape(
+        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
+    ) -> NDArray[np.float_]:
+        if which_landscape == "auto":
+            if self.true_landscape is not None:
+                return self.true_landscape
+            which_landscape = "reconstructed"
+        if which_landscape == "true":
+            if self.true_landscape is None:
+                raise RuntimeError(
+                    "The true landscape is not present. Use `Landscape.run_all()` "
+                    "or directly supply it to `Landscape.true_landscape`."
+                )
+            return self.true_landscape
+        if which_landscape == "reconstructed":
+            if self.reconstructed_landscape is None:
+                warnings.warn(
+                    "The reconstructed landscape is not present. "
+                    "Attempting to reconstruct with default configurations..."
+                )
+                self.reconstruct()
+            return self.reconstructed_landscape
+        raise ValueError("Incorrect value for `which_landscape`")
+
     def interpolate(
         self,
         method: Literal["linear", "nearest", "slinear", "cubic", "quintic", "pchip"] = "slinear",
         bounds_error: bool = False,
         fill_value: float | None = None,
     ) -> RegularGridInterpolator:
-        landscape = self._get_landscape("auto")
+        landscape = self.get_landscape("auto")
         self._interpolator = RegularGridInterpolator(
             self._gen_axes(),
             landscape,
@@ -103,13 +131,13 @@ class Landscape:
         self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
     ) -> NDArray[np.int_]:
         return self._unravel_index(
-            [np.argmin(self._get_landscape(which_landscape))]
+            [np.argmin(self.get_landscape(which_landscape))]
         )  # TODO: format
 
     def optimal_value(
         self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
     ) -> float:
-        return np.min(self._get_landscape(which_landscape))
+        return np.min(self.get_landscape(which_landscape))
 
     def sample_and_run(
         self,
@@ -175,8 +203,8 @@ class Landscape:
         metric: Literal["MIN_MAX", "MEAN", "RMSE", "CROSS_CORRELATION", "CONV", "NRMSE", "ZNCC"]
         | Callable[[NDArray[np.float_], NDArray[np.float_]], float],
     ) -> float:
-        true_landscape = self._get_landscape("true")
-        reconstructed_landscape = self._get_landscape("reconstructed")
+        true_landscape = self.get_landscape("true")
+        reconstructed_landscape = self.get_landscape("reconstructed")
         if isinstance(metric, Callable):
             return metric(true_landscape, reconstructed_landscape)
         else:
@@ -223,30 +251,6 @@ class Landscape:
                 indexing="ij",
             )
         ).transpose((*range(1, self.num_params + 1), 0))
-
-    def _get_landscape(
-        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
-    ) -> NDArray[np.float_]:
-        if which_landscape == "auto":
-            if self.true_landscape is not None:
-                return self.true_landscape
-            which_landscape = "reconstructed"
-        if which_landscape == "true":
-            if self.true_landscape is None:
-                raise RuntimeError(
-                    "The true landscape is not present. Use `Landscape.run_all()` "
-                    "or directly supply it to `Landscape.true_landscape`."
-                )
-            return self.true_landscape
-        if which_landscape == "reconstructed":
-            if self.reconstructed_landscape is None:
-                warnings.warn(
-                    "The reconstructed landscape is not present. "
-                    "Attempting to reconstruct with default configurations..."
-                )
-                self.reconstruct()
-            return self.reconstructed_landscape
-        raise ValueError("Incorrect value for `which_landscape`")
 
     def _ravel_multi_index(self, indices: Sequence[NDArray[np.int_]]) -> NDArray[np.int_]:
         return np.ravel_multi_index(indices, self.param_resolutions)

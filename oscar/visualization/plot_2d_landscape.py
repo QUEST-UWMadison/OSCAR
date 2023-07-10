@@ -19,7 +19,7 @@ def plot_2d_landscape(
 ) -> Figure:
     if landscape.num_params != 2:
         raise ValueError("Landscape must be two-dimensional.")
-    landscape_array = landscape._get_landscape(which_landscape)
+    landscape_array = landscape.get_landscape(which_landscape)
     fig = plt.figure(figure)
     plt.imshow(
         landscape_array.T,
