@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from functools import singledispatchmethod
 
+import numpy as np
 from qiskit.algorithms import VQE as OldVQE
 from qiskit.algorithms.minimum_eigensolvers import VQE, SamplingVQE
 from qiskit.opflow import OperatorBase
@@ -36,4 +37,4 @@ class QiskitExecutor(BaseExecutor):
         algorithm._check_operator_ansatz(operator)  # pylint: disable=protected-access
 
     def _run(self, params: Sequence[float], *args, **kwargs) -> float:
-        return self.evaluate_energy(params, *args, **kwargs)
+        return self.evaluate_energy(np.array(params), *args, **kwargs)

@@ -15,14 +15,16 @@ if TYPE_CHECKING:
 
 
 class CustomOptimizer(BaseOptimizer):
-    def __init__(self, optimizer: Callable[[NDArray[np.float_]], Mapping[str, Any]]) -> None:
+    def __init__(
+        self, optimizer: Callable[[NDArray[np.float_]], Mapping[str, Any]], name: str | None
+    ) -> None:
         self.optimizer: Callable[[Sequence[float]], Mapping[str, Any]] = optimizer
+        if name is None:
+            name = self.optimizer.__name__
+        self.name: str = name
 
     def name(self, include_library_name: bool = True) -> str:
-        name = self.optimizer.__name__
-        if include_library_name:
-            name += " (Custom)"
-        return name
+        return self.name + (" (Custom)" if include_library_name else "")
 
     def run(
         self, executor: BaseExecutor, initial_point: Sequence[float], *args, **kwargs
