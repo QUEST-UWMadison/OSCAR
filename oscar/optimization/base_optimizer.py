@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from qiskit.algorithms.optimizers import OptimizerResult
 from scipy.optimize import OptimizeResult
@@ -20,6 +20,10 @@ class BaseOptimizer(ABC):
 
     @abstractmethod
     def run(
-        self, executor: BaseExecutor, initial_point: Sequence[float], *args, **kwargs
+        self,
+        executor: BaseExecutor,
+        initial_point: Sequence[float],
+        executor_kwargs: dict[str, Any] | None = None,
+        **kwargs,
     ) -> tuple[Trace, OptimizerResult | OptimizeResult]:
         pass

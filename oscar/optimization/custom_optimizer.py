@@ -27,11 +27,19 @@ class CustomOptimizer(BaseOptimizer):
         return self.name + (" (Custom)" if include_library_name else "")
 
     def run(
-        self, executor: BaseExecutor, initial_point: Sequence[float], *args, **kwargs
+        self,
+        executor: BaseExecutor,
+        initial_point: Sequence[float],
+        executor_kwargs: dict[str, Any] | None = None,
+        **kwargs,
     ) -> tuple[Trace, Mapping[str, Any]]:
+        if executor_kwargs is None:
+            executor_kwargs = {}
         trace = Trace()
         result = self.optimizer(
-            partial(executor.run, callback=trace.append), np.array(initial_point), *args, **kwargs
+            partial(executor.run, callback=trace.append, **executor_kwargs),
+            np.array(initial_point),
+            **kwargs,
         )
         trace.update_with_custom_result(result)
         return trace, result

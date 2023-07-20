@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 try:
     from collections.abc import Sequence
     from functools import partial
@@ -16,11 +18,8 @@ try:
         from ..execution.base_executor import BaseExecutor
 
     class ScikitQuantOptimizer(BaseOptimizer):
-        def __init__(
-            self, method: Literal["imfil", "bobyqa", "snobfit", "nomad"], budget: int = 10000
-        ) -> None:
+        def __init__(self, method: Literal["imfil", "bobyqa", "snobfit", "nomad"]) -> None:
             self.method: Literal["imfil", "bobyqa", "snobfit", "nomad"] = method
-            self.budget: int = budget
 
         def name(self, include_library_name: bool = True) -> str:
             name: str = self.method
@@ -32,18 +31,20 @@ try:
             self,
             executor: BaseExecutor,
             initial_point: Sequence[float],
-            bounds: Sequence[Sequence[float]],  # TODO nomad
-            *args,
+            executor_kwargs: dict[str, Any] | None = None,
+            bounds: Sequence[Sequence[float]] | None = None,  # TODO nomad
+            budget: int = 10000,
             **kwargs,
         ) -> tuple[Trace, Result]:
+            if executor_kwargs is None:
+                executor_kwargs = {}
             trace = Trace()
             result = minimize(
-                partial(executor.run, callback=trace.append),
-                np.array(initial_point),
-                np.array(bounds),
-                self.budget,
-                self.method,
-                *args,
+                func=partial(executor.run, callback=trace.append, **executor_kwargs),
+                x0=np.array(initial_point),
+                bounds=None if bounds is None else np.array(bounds),
+                budget=budget,
+                method=self.method,
                 **kwargs,
             )
             trace.update_with_skquant_result(result)
