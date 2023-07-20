@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+from . import result_metrics
 from .custom_optimizer import CustomOptimizer
+from .hyperparameter_tuner import (
+    HyperparameterGrid,
+    HyperparameterSet,
+    HyperparameterTuner,
+)
 from .nlopt_optimizer import NLoptOptimizer
 from .qiskit_optimizer import QiskitOptimizer
 from .trace import Trace
