@@ -19,20 +19,19 @@ class CustomExecutor(BaseExecutor):
             [Sequence[Sequence[float]]], Sequence[float]
         ] | None = batch_function
 
-    def _run(self, params: Sequence[float], *args, **kwargs) -> float:
-        return self.function(params, *args, **kwargs)
+    def _run(self, params: Sequence[float], **kwargs) -> float:
+        return self.function(params, **kwargs)
 
     def run_batch(
         self,
         params_list: Sequence[Sequence[float]],
         callback: Callable[[Sequence[float], float, float], None] | None = None,
         return_time: bool = False,
-        *args,
         **kwargs,
     ) -> NDArray[np.float_] | tuple[NDArray[np.float_], NDArray[np.float_] | None]:
         if self.batch_function is None:
             return super().run_batch(params_list, callback)
-        result = np.array(self.batch_function(params_list, *args, **kwargs))
+        result = np.array(self.batch_function(params_list, **kwargs))
         if return_time:
             return result, None
         return result
