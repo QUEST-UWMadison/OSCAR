@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from functools import singledispatchmethod
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class NLoptOptimizer(BaseOptimizer):
-    @singledispatchmethod
     def __init__(self, optimizer: opt | str) -> None:
         self.optimizer: opt | str = optimizer
 
@@ -91,7 +89,7 @@ class NLoptOptimizer(BaseOptimizer):
                 else:
                     self.optimizer.add_equality_constraint(*constraint)
         if inequality_constraints is not None:
-            for constraint in equality_constraints:
+            for constraint in inequality_constraints:
                 if isinstance(constraint[1], np.ndarray):
                     self.optimizer.add_inequality_mconstraint(*constraint)
                 else:

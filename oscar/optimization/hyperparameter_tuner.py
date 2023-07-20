@@ -44,7 +44,9 @@ class HyperparameterGrid(dict):
 class HyperparameterTuner:
     def __init__(self, configs: Sequence[HyperparameterGrid | Iterable[HyperparameterSet]]):
         self.configs: Sequence[HyperparameterGrid | Iterable[HyperparameterSet]] = configs
-        self.shapes, self.traces, self.results = {}, {}, {}
+        self.shapes: dict[str, tuple[int]] = {}
+        self.traces: dict[str, Trace] = {}
+        self.results: dict[str, Any] = {}
         for config_set in self.configs:
             self.shapes[config_set.method] = config_set.shape
 
