@@ -36,9 +36,12 @@ class HyperparameterGrid(dict):
         return tuple(len(values) for values in self.values())
 
     def generate_hyperparameter_sets(self) -> Iterator[HyperparameterSet]:
-        keys = self.keys()
+        for key, value in self.items():
+            # turn dict of lists into list of dicts
+            if isinstance(value, dict):
+                self[key] = (dict(zip(value, comb)) for comb in product(*value.values()))
         for values in product(*self.values()):
-            yield HyperparameterSet(self.method, dict(zip(keys, values)))
+            yield HyperparameterSet(self.method, dict(zip(self.keys(), values)))
 
 
 class HyperparameterTuner:
