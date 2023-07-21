@@ -95,5 +95,5 @@ class HyperparameterTuner:
                 ret[method].append(function(method, i, trace, result))
             ret[method] = np.array(ret[method])
             if reshape:
-                ret[method] = ret[method].reshape(self.shapes[method], -1)
+                ret[method] = ret[method].reshape(*self.shapes[method], -1)
         return ret
