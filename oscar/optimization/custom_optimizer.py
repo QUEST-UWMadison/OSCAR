@@ -21,10 +21,10 @@ class CustomOptimizer(BaseOptimizer):
         self.optimizer: Callable[[Sequence[float]], Mapping[str, Any]] = optimizer
         if name is None:
             name = self.optimizer.__name__
-        self.name: str = name
+        self._name: str = name
 
     def name(self, include_library_name: bool = True) -> str:
-        return self.name + (" (Custom)" if include_library_name else "")
+        return self._name + (" (Custom)" if include_library_name else "")
 
     def run(
         self,
