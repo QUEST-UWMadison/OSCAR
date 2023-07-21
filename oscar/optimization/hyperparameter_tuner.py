@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from itertools import product
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any
+from copy import deepcopy
 
 import numpy as np
 from numpy.typing import NDArray
@@ -15,9 +16,9 @@ if TYPE_CHECKING:
 
 
 class HyperparameterSet(dict):
-    def __init__(self, method: str, *args, **kwargs):
+    def __init__(self, optimizer: BaseOptimizer, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.method: str = method
+        self.optimizer: BaseOptimizer = optimizer
 
     @property
     def shape(self) -> tuple[int]:
@@ -27,9 +28,13 @@ class HyperparameterSet(dict):
 
 
 class HyperparameterGrid(dict):
-    def __init__(self, method: str, *args, **kwargs):
+    def __init__(self, optimizer: BaseOptimizer, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.method: str = method
+        self.optimizer: BaseOptimizer = optimizer
+
+    @property
+    def method(self) -> str:
+        return self.optimizer.name()
 
     @property
     def shape(self) -> tuple[int]:
@@ -41,7 +46,7 @@ class HyperparameterGrid(dict):
             if isinstance(value, dict):
                 self[key] = (dict(zip(value, comb)) for comb in product(*value.values()))
         for values in product(*self.values()):
-            yield HyperparameterSet(self.method, dict(zip(self.keys(), values)))
+            yield HyperparameterSet(deepcopy(self.optimizer), dict(zip(self.keys(), values)))
 
 
 class HyperparameterTuner:
@@ -60,19 +65,12 @@ class HyperparameterTuner:
     def run(
         self,
         executors: BaseExecutor | Sequence[BaseExecutor],
-        optimizers: Type[BaseOptimizer]
-        | Sequence[Type[BaseOptimizer]]
-        | BaseOptimizer
-        | Sequence[BaseOptimizer],
     ) -> tuple[dict[str, list[Trace]], dict[str, list[Any]]]:
         if not isinstance(executors, Sequence):
             executors = [executors] * len(self.configs)
 
-        if not isinstance(optimizers, Sequence):
-            optimizers = [optimizers] * len(self.configs)
-
         traces, results = {}, {}
-        for config_set, executor, optimizer in zip(self.configs, executors, optimizers):
+        for config_set, executor in zip(self.configs, executors):
             method = config_set.method
             self.shapes[method] = config_set.shape
             traces[method] = []
@@ -80,9 +78,7 @@ class HyperparameterTuner:
             if isinstance(config_set, HyperparameterGrid):
                 config_set = config_set.generate_hyperparameter_sets()
             for config in config_set:
-                if not isinstance(optimizer, BaseOptimizer):
-                    optimizer = optimizer(method)
-                trace, result = optimizer.run(executor, **config)
+                trace, result = config.optimizer.run(executor, **config)
                 traces[method].append(trace)
                 results[method].append(result)
         self.traces = traces

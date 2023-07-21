@@ -27,7 +27,7 @@ class QiskitOptimizer(BaseOptimizer):
         self.optimizer = getattr(optimizers, optimizer)(**configs)
 
     def name(self, include_library_name: bool = True) -> str:
-        name = self.optimizer.__name__
+        name = self.optimizer.__class__.__name__
         if include_library_name:
             name += " (Qiskit)"
         return name
