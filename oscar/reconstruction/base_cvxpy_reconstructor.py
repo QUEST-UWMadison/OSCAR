@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Sequence
+from functools import reduce
 from math import prod, sqrt
 from typing import TYPE_CHECKING, Any
 
@@ -40,11 +41,7 @@ class BaseCvxPyReconstructor(BaseReconstructor):
         return x
 
     def _build_idct_operator(self, shape: Sequence[int]) -> NDArray[np.float_]:
-        idct_operators = [idct(np.identity(n), norm="ortho", axis=0) for n in shape]
-        a = idct_operators[0]
-        for b in idct_operators[1:]:
-            a = np.kron(a, b)
-        return a
+        return reduce(np.kron, (idct(np.identity(n), norm="ortho", axis=0) for n in shape))
 
     @abstractmethod
     def _build_optimization_problem(
