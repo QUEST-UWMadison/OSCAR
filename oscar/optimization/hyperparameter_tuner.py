@@ -44,9 +44,24 @@ class HyperparameterGrid(dict):
         for key, value in self.items():
             # turn dict of lists into list of dicts
             if isinstance(value, dict):
-                self[key] = (dict(zip(value, comb)) for comb in product(*value.values()))
+                self[key] = [dict(zip(value, comb)) for comb in product(*value.values())]
         for values in product(*self.values()):
             yield HyperparameterSet(deepcopy(self.optimizer), dict(zip(self.keys(), values)))
+
+    def interpret(
+        self, indices: int | Sequence[int], ignore_fixed_config: bool = True
+    ) -> list[str] | list[list[str]]:
+        single_idx = False
+        if isinstance(indices, int):
+            single_idx = True
+            indices = [indices]
+        ret = []
+        for index in np.array(np.unravel_index(indices, self.shape)).T:
+            ret.append([])
+            for idx, (key, value) in zip(index, self.items()):
+                if not ignore_fixed_config or len(value) != 1:
+                    ret[-1].append(f"{key}={value[idx]}")
+        return ret[0] if single_idx else ret
 
 
 class HyperparameterTuner:
@@ -95,5 +110,5 @@ class HyperparameterTuner:
                 ret[method].append(function(method, i, trace, result))
             ret[method] = np.array(ret[method])
             if reshape:
-                ret[method] = ret[method].reshape(*self.shapes[method], -1)
+                ret[method] = ret[method].reshape(*self.shapes[method], -1).squeeze()
         return ret
