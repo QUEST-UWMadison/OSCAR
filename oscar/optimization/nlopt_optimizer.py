@@ -107,7 +107,7 @@ class NLoptOptimizer(BaseOptimizer):
         if x_weights is not None:
             self.optimizer.set_x_weights(x_weights)
         if maxeval is not None:
-            self.optimizer.set_maxeval(maxeval)
+            self.optimizer.set_maxeval(int(maxeval))
         if maxtime is not None:
             self.optimizer.set_maxtime(maxtime)
         if local_optimizer is not None:
