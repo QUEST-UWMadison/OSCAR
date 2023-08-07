@@ -10,12 +10,12 @@ pip install git+https://github.com/haoty/OSCAR
 
 ## Get Started
 __The following walkthrough is also available as a [Jupyter notebook](https://github.com/HaoTy/OSCAR/blob/main/notebooks/get_started.ipynb).__
-## This notebook demonstrates typical usages of OSCAR
+
 ### Introduction
 
 An "(energy) landscape" of a variational quantum algorithm (VQA) is the ensemble of objective function values over the parameter space, where each value is the expectation of measuring the problem Hamiltonian with the variational ansatz under the corresponding parameters. OSCAR exploits landscapes to provide VQA debugging featuers.
 
-In OSCAR, the `oscar.Landscape` class uses a discretized grid over parameters in given ranges ([#Landscape](#landscape)), where the grid values are calculated by an `oscar.BaseExecutor` ([#Executor](#executor)). To speed up this grid generation process, OSCAR provides the option to approximate the grid values using only a small fraction of samples ([#Reconstruction](#reconstruction)). Additionally, OSCAR can interpolate the grid points to provide a continuous function approximating the landscape for instant optimization runs ([#Interpolation](#interpolation)), thus enabling highly efficient [#Optimization benchmarking](#optimization-benchmarking) for choosing optimizers, their hyperparameters, initialization strategies, and more.
+In OSCAR, the `oscar.Landscape` class uses a discretized grid over parameters in given ranges ([#Landscape](#landscape)), where the grid values are calculated by an `oscar.BaseExecutor` ([#Executor](#executor)). To speed up this grid generation process, OSCAR provides the option to approximate the grid values using only a small fraction of samples ([#Reconstruction](#reconstruction)). Additionally, OSCAR can interpolate the grid points to provide a continuous function approximating the landscape for instant optimization runs ([#Interpolation](#interpolation)), thus enabling highly efficient [#Optimization configuration benchmarking](#optimization-configuration-benchmarking) for choosing optimizers, their hyperparameters, initialization strategies, and more.
 
 ### Landscape
 
@@ -137,6 +137,15 @@ Uncomment to run the true landscape and compare. (May take some time)
 ![assets/get_started_1.png](assets/get_started_2.png?raw=true)
 
 
+Landscapes can be easily saved for later retrieval.
+
+
+```python
+filename = f"../data/landscapes/p=1-{n=}-{bounds}-{resolution}.pckl"
+landscape.save(filename)
+landscape = Landscape.load(filename)
+```
+
 
 ### Interpolation
 OSCAR can interpolate the grid points to get a continuous approximation of the landscape, which can in turn serve as an executor for optimizers and other purposes.
@@ -192,16 +201,7 @@ optimize_and_show(qiskit_executor)
 
 We see that the results are very close, while the time for optimizing with the interpolated landscape is negligible compared to the actual optimization, especially when the problem size is large.
 
-Landscapes can be easily saved for later retrieval.
-
-
-```python
-filename = f"../data/landscapes/p=1-{n=}-{bounds}-{resolution}.pckl"
-landscape.save(filename)
-landscape = Landscape.load(filename)
-```
-
-### Optimization benchmarking
+### Optimization Configuration Benchmarking
 We can specify combinations of hyperparameter values with `oscar.HyperparameterGrid` or `oscar.HyperparameterSet` and then utilize `oscar.HyperparameterTuner` to conveniently do a grid search over all combinations. If a landscape object is available, we can take advantage of the interpolated executor to reduce the grid search time to seconds.
 
 
