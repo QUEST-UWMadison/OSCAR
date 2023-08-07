@@ -132,10 +132,7 @@ class Landscape:
                 num_samples = round(sampling_fraction * self.size)
             else:
                 raise ValueError("Supply only one of `sampling_fraction` and `num_samples`.")
-        self.sampled_landscape = self.run_with_flatten_indices(
-            executor, self._sample_indices(num_samples, rng)
-        )
-        return self.sampled_landscape
+        return self.run_flatten_indices(executor, self._sample_indices(num_samples, rng))
 
     def run_all(self, executor: BaseExecutor) -> NDArray[np.float_]:
         self.landscape = self._run(executor, self._flatten_param_grid()).reshape(
@@ -143,7 +140,7 @@ class Landscape:
         )
         return self.landscape
 
-    def run_with_indices(
+    def run_indices(
         self,
         executor: BaseExecutor,
         param_indices: Sequence[Sequence[int]] | Sequence[int] | int,
@@ -153,13 +150,14 @@ class Landscape:
         if isinstance(param_indices[0], int):
             param_indices = tuple([i] for i in param_indices)
         param_indices = self._ravel_multi_index(param_indices)
-        return self.run_with_flatten_indices(executor, param_indices)
+        return self.run_flatten_indices(executor, param_indices)
 
-    def run_with_flatten_indices(
+    def run_flatten_indices(
         self, executor: BaseExecutor, param_indices: Sequence[int] | int
     ) -> NDArray[np.float_]:
         if isinstance(param_indices, int):
             param_indices = [param_indices]
+        param_indices = np.array(param_indices)
         result = self._run(
             executor,
             self._flatten_param_grid()[param_indices],
@@ -180,18 +178,12 @@ class Landscape:
     def _add_sampled_landscape(
         self, sampled_indices: NDArray[np.int_], sampled_landscape: NDArray[np.float_]
     ) -> None:
-        # sampled_indices = np.unique(sampled_indices)
-        # if self._sampled_indices is None:
-        self._sampled_indices = np.array(sampled_indices)
-        self.sampled_landscape = sampled_landscape
-        # else:
-        #     # TODO
-        #     raise NotImplementedError()
-        #     mask = np.isin(sampled_indices, self._sampled_indices, True, True)
-        #     run_indices = sampled_indices[mask]
-        #     self._sampled_indices = np.unique(
-        #         np.concatenate((self._sampled_indices, sampled_indices))
-        #     )
+        if self._sampled_indices is not None:
+            sampled_indices = np.concatenate((sampled_indices, self._sampled_indices))
+            sampled_landscape = np.concatenate((sampled_landscape, self.sampled_landscape))
+        sampled_indices, value_indices = np.unique(sampled_indices, True)
+        self._sampled_indices = sampled_indices
+        self.sampled_landscape = sampled_landscape[value_indices]
 
     def _flatten_param_grid(self) -> NDArray[np.float_]:
         return self.param_grid.reshape(-1, self.num_params)
@@ -227,7 +219,11 @@ class Landscape:
     ) -> NDArray[np.int_]:
         if not isinstance(rng, np.random.Generator):
             rng = np.random.default_rng(rng)
-        return rng.choice(self.size, num_samples, replace=False)
+        return rng.choice(
+            np.arange(self.size)[np.in1d(np.arange(self.size), self._sampled_indices, True, True)],
+            num_samples,
+            replace=False,
+        )
 
     def _unravel_index(self, indices: Sequence[int]) -> tuple[NDArray[np.int_]]:
         return np.unravel_index(indices, self.param_resolutions)
