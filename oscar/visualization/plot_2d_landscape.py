@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Literal
-
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
@@ -13,13 +11,12 @@ from ..optimization import Trace
 def plot_2d_landscape(
     landscape: Landscape,
     trace: Trace | None = None,
-    which_landscape: Literal["true", "reconstructed", "auto"] = "auto",
     show: bool = True,
     figure: Figure | None = None,
 ) -> Figure:
     if landscape.num_params != 2:
         raise ValueError("Landscape must be two-dimensional.")
-    landscape_array = landscape.get_landscape(which_landscape)
+    landscape_array = landscape.landscape
     fig = plt.figure(figure)
     plt.imshow(
         landscape_array.T,
@@ -27,9 +24,6 @@ def plot_2d_landscape(
         origin="lower",
         interpolation="none",
     )
-    # Can't tell the order of gamma and beta, or really, if it's QAOA
-    # plt.xlabel("β")
-    # plt.ylabel("γ", rotation=0, va="center")
     plt.colorbar()
     if trace is not None:
         plt.plot(
@@ -49,7 +43,7 @@ def plot_2d_landscape(
             s=15,
         )
     plt.scatter(
-        *landscape.optimal_params(which_landscape),
+        *landscape.optimal_params,
         marker="*",
         color="white",
         s=20,

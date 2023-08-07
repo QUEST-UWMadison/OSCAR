@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from . import result_metrics
+from .base_optimizer import BaseOptimizer
 from .custom_optimizer import CustomOptimizer
 from .hyperparameter_tuner import (
     HyperparameterGrid,

@@ -4,7 +4,8 @@ import math
 import os
 import pickle
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
+from copy import deepcopy
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
@@ -30,19 +31,17 @@ class Landscape:
     ) -> None:
         self.num_params: int = len(param_resolutions)
         self.param_resolutions: NDArray[np.int_] = np.array(param_resolutions)
-        if not isinstance(param_bounds[0], Sequence):
+        if isinstance(param_bounds[0], float):
             param_bounds = [param_bounds] * self.num_params
         self.param_bounds: NDArray[np.float_] = np.array(param_bounds)
         self.param_grid: NDArray[np.float_] = self._gen_param_grid()
-        self.true_landscape: NDArray[np.float_] | None = None
-        self.reconstructed_landscape: NDArray[np.float_] | None = None
+        self.landscape: NDArray[np.float_] | None = None
         self.sampled_landscape: NDArray[np.float_] | None = None
         self._sampled_indices: NDArray[np.int_] | None = None
         self._interpolator: RegularGridInterpolator | None = None
 
-    @property
-    def landscape(self) -> NDArray[np.float_]:
-        return self.get_landscape("auto")
+    def __call__(self, params: Sequence[float]) -> float:
+        return self.interpolator(params)[0]
 
     @property
     def interpolator(self) -> RegularGridInterpolator:
@@ -59,8 +58,24 @@ class Landscape:
         return 0 if self._sampled_indices is None else len(self._sampled_indices)
 
     @property
-    def shape(self) -> list:
-        return self.param_resolutions.tolist()
+    def optimal_params(self) -> NDArray[np.float_]:
+        lower_bounds, upper_bounds = self.param_bounds.T
+        return (
+            self.optimal_point_indices / self.param_resolutions * (upper_bounds - lower_bounds)
+            + lower_bounds
+        )
+
+    @property
+    def optimal_point_indices(self) -> NDArray[np.int_]:
+        return np.array(self._unravel_index(np.argmin(self.landscape))).flatten()
+
+    @property
+    def optimal_value(self) -> float:
+        return np.min(self.landscape)
+
+    @property
+    def shape(self) -> tuple[int]:
+        return tuple(self.param_resolutions)
 
     @property
     def size(self) -> int:
@@ -76,29 +91,8 @@ class Landscape:
     def sampling_fraction(self) -> float:
         return self.num_samples / self.size
 
-    def get_landscape(
-        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
-    ) -> NDArray[np.float_]:
-        if which_landscape == "auto":
-            if self.true_landscape is not None:
-                return self.true_landscape
-            which_landscape = "reconstructed"
-        if which_landscape == "true":
-            if self.true_landscape is None:
-                raise RuntimeError(
-                    "The true landscape is not present. Use `Landscape.run_all()` "
-                    "or directly supply it to `Landscape.true_landscape`."
-                )
-            return self.true_landscape
-        if which_landscape == "reconstructed":
-            if self.reconstructed_landscape is None:
-                warnings.warn(
-                    "The reconstructed landscape is not present. "
-                    "Attempting to reconstruct with default configurations..."
-                )
-                self.reconstruct()
-            return self.reconstructed_landscape
-        raise ValueError("Incorrect value for `which_landscape`")
+    def copy(self) -> Landscape:
+        return deepcopy(self)
 
     def interpolate(
         self,
@@ -106,45 +100,29 @@ class Landscape:
         bounds_error: bool = False,
         fill_value: float | None = None,
     ) -> RegularGridInterpolator:
-        landscape = self.get_landscape("auto")
         self._interpolator = RegularGridInterpolator(
             self._gen_axes(),
-            landscape,
+            self.landscape,
             method,
             bounds_error,
             fill_value,
         )
         return self._interpolator
 
-    def optimal_params(
-        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
-    ) -> NDArray[np.float_]:
-        lower_bounds, upper_bounds = self.param_bounds.T  # TODO: arbitrary dimension
-        return (
-            self.optimal_point_indices(which_landscape)
-            / self.param_resolutions[:, np.newaxis]
-            * (upper_bounds - lower_bounds)[:, np.newaxis]
-            + lower_bounds[:, np.newaxis]
-        ).flatten()
+    @staticmethod
+    def like(landscape: Landscape) -> Landscape:
+        return Landscape(landscape.param_resolutions, landscape.param_bounds)
 
-    def optimal_point_indices(
-        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
-    ) -> NDArray[np.int_]:
-        return self._unravel_index(
-            [np.argmin(self.get_landscape(which_landscape))]
-        )  # TODO: format
-
-    def optimal_value(
-        self, which_landscape: Literal["true", "reconstructed", "auto"] = "auto"
-    ) -> float:
-        return np.min(self.get_landscape(which_landscape))
+    @staticmethod
+    def load(filename: str) -> Landscape:
+        return pickle.load(open(filename, "rb"))
 
     def sample_and_run(
         self,
         executor: BaseExecutor,
         sampling_fraction: float | None = None,
         num_samples: int | None = None,
-        seed: int | None = None,
+        rng: np.random.Generator | int | None = None,
     ) -> NDArray[np.float_]:
         if sampling_fraction is None:
             if num_samples is None:
@@ -155,15 +133,15 @@ class Landscape:
             else:
                 raise ValueError("Supply only one of `sampling_fraction` and `num_samples`.")
         self.sampled_landscape = self.run_with_flatten_indices(
-            executor, self._sample_indices(num_samples, seed)
+            executor, self._sample_indices(num_samples, rng)
         )
         return self.sampled_landscape
 
     def run_all(self, executor: BaseExecutor) -> NDArray[np.float_]:
-        self.true_landscape = self._run(executor, self._flatten_param_grid()).reshape(
+        self.landscape = self._run(executor, self._flatten_param_grid()).reshape(
             self.param_resolutions
         )
-        return self.true_landscape
+        return self.landscape
 
     def run_with_indices(
         self,
@@ -182,9 +160,6 @@ class Landscape:
     ) -> NDArray[np.float_]:
         if isinstance(param_indices, int):
             param_indices = [param_indices]
-        # Commented since the current executor may not be the one used to run the true landscape
-        # if self.true_landscape is not None:
-        #     result = self.true_landscape.flat[param_indices]
         result = self._run(
             executor,
             self._flatten_param_grid()[param_indices],
@@ -195,21 +170,8 @@ class Landscape:
     def reconstruct(self, reconstructor: BaseReconstructor | None = None) -> NDArray[np.float_]:
         if reconstructor is None:
             reconstructor = BPReconstructor()
-        self.reconstructed_landscape = reconstructor.run(self)
-        return self.reconstructed_landscape
-
-    def reconstruction_error(
-        self,
-        metric: Literal["MIN_MAX", "MEAN", "RMSE", "CROSS_CORRELATION", "CONV", "NRMSE", "ZNCC"]
-        | Callable[[NDArray[np.float_], NDArray[np.float_]], float],
-    ) -> float:
-        true_landscape = self.get_landscape("true")
-        reconstructed_landscape = self.get_landscape("reconstructed")
-        if callable(metric):
-            return metric(true_landscape, reconstructed_landscape)
-        else:
-            metric = metric.upper()
-            raise NotImplementedError()
+        self.landscape = reconstructor.run(self)
+        return self.landscape
 
     def save(self, filename: str) -> None:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -260,8 +222,12 @@ class Landscape:
     ) -> NDArray[np.float_]:
         return executor.run_batch(params_list)
 
-    def _sample_indices(self, num_samples: int, seed: int | None = None) -> NDArray[np.int_]:
-        return np.random.default_rng(seed).choice(self.size, num_samples, replace=False)
+    def _sample_indices(
+        self, num_samples: int, rng: np.random.Generator | int | None = None
+    ) -> NDArray[np.int_]:
+        if not isinstance(rng, np.random.Generator):
+            rng = np.random.default_rng(rng)
+        return rng.choice(self.size, num_samples, replace=False)
 
     def _unravel_index(self, indices: Sequence[int]) -> tuple[NDArray[np.int_]]:
         return np.unravel_index(indices, self.param_resolutions)
