@@ -21,3 +21,10 @@ def approximation_ratio(
         return (_evaluate_optimal_point(trace, executor) - min_value) / (max_value - min_value)
 
     return compute_ar
+
+
+def optimal_value(executor: BaseExecutor | None = None) -> Callable[[str, int, Trace, Any], float]:
+    def get_optimal_value(method: str, index: int, trace: Trace, result: Any) -> float:
+        return _evaluate_optimal_point(trace, executor)
+
+    return get_optimal_value
