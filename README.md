@@ -1,7 +1,7 @@
 # OSCAR: configure and debug variational quantum algorithms (VQAs) efficiently
 OSCAR leverages compressed sensing to reconstruct the landscape of variational quantum algorithms, using only a small fraction of all circuit executions needed for the entire landscape. In addition, by interpolating the discrete landscape, OSCAR can benchmark thousands of optimization configurations in an instant.
 
-This is a package accompanying the paper [Enabling High Performance Debugging for Variational Quantum Algorithms using Compressed Sensing](https://arxiv.org/abs/2308.03213). For our original research implementation and record, please refer to [https://github.com/kunliu7/oscar/](https://github.com/kunliu7/oscar/). This repo is a rewrite as a user-friendly package, and some of the methods have been substantially improved in comparison to the version used in the paper.
+This is a package accompanying the paper [Enabling High Performance Debugging for Variational Quantum Algorithms using Compressed Sensing](https://arxiv.org/abs/2308.03213). For our original research implementation and record, please refer to [https://github.com/kunliu7/oscar/](https://github.com/kunliu7/oscar/). This repo is a rewrite as a user-friendly package, and some of the methods have been substantially improved compared to the version used in the paper.
 
 ## Install
 ```
@@ -13,7 +13,7 @@ __The following walkthrough is also available as a [Jupyter notebook](https://gi
 
 ### Introduction
 
-An "(energy) landscape" of a variational quantum algorithm (VQA) is the ensemble of objective function values over the parameter space, where each value is the expectation of measuring the problem Hamiltonian with the variational ansatz under the corresponding parameters. OSCAR exploits landscapes to provide VQA debugging featuers.
+An "(energy) landscape" of a variational quantum algorithm (VQA) is the ensemble of objective function values over the parameter space, where each value is the expectation of measuring the problem Hamiltonian with the variational ansatz under the corresponding parameters. OSCAR exploits landscapes to provide VQA debugging features.
 
 In OSCAR, the `oscar.Landscape` class uses a discretized grid over parameters in given ranges ([#Landscape](#landscape)), where the grid values are calculated by an `oscar.BaseExecutor` ([#Executor](#executor)). To speed up this grid generation process, OSCAR provides the option to approximate the grid values using only a small fraction of samples ([#Reconstruction](#reconstruction)). Additionally, OSCAR can interpolate the grid points to provide a continuous function approximating the landscape for instant optimization runs ([#Interpolation](#interpolation)), thus enabling highly efficient [#Optimization configuration benchmarking](#optimization-configuration-benchmarking) for choosing optimizers, their hyperparameters, initialization strategies, and more.
 
@@ -99,7 +99,7 @@ qiskit_executor = QiskitExecutor(algorithm, H)
 
 ### Reconstruction
 
-Sample a few points on the grid and get their value using our previously-defined executor.
+Sample a few points on the grid and get their value using our previously defined executor.
 
 
 ```python
@@ -243,7 +243,7 @@ print(f"...in {time() - start:.2f} seconds.")
     ...in 2.67 seconds.
 
 
-Print out top optimizer configurations using the optimizer reported optimal value (energy) as the metric.
+Print out top optimizer configurations using the optimizer-reported optimal value (energy) as the metric.
 
 
 ```python
