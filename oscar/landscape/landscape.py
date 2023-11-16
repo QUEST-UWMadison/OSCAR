@@ -6,7 +6,7 @@ import pickle
 import warnings
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Iterable, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -31,7 +31,7 @@ class Landscape:
     ) -> None:
         self.num_params: int = len(param_resolutions)
         self.param_resolutions: NDArray[np.int_] = np.array(param_resolutions)
-        if isinstance(param_bounds[0], float):
+        if not isinstance(param_bounds[0], Iterable):
             param_bounds = [param_bounds] * self.num_params
         self.param_bounds: NDArray[np.float_] = np.array(param_bounds)
         self.param_grid: NDArray[np.float_] = self._gen_param_grid()
