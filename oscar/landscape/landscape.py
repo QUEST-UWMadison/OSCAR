@@ -12,6 +12,8 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 
+from oscar import landscape
+
 from ..execution.base_executor import BaseExecutor
 from ..reconstruction import BPReconstructor
 
@@ -134,6 +136,19 @@ class Landscape:
                 raise ValueError("Supply only one of `sampling_fraction` and `num_samples`.")
         return self.run_flatten_indices(executor, self._sample_indices(num_samples, rng))
 
+    def slice(self, slices: Sequence[slice | int] | slice | int) -> Landscape:
+        if isinstance(slices, int) or isinstance(slices, slice):
+            slices = [slices]
+        slices = tuple(slices) + (slice(None),) * (self.num_params - len(slices))
+        axes = self._gen_axes()
+        resolutions = [len(axis[s]) for axis, s in zip(axes, slices) if isinstance(s, slice)]
+        bounds = [
+            (axis[s][0], axis[s][-1]) for axis, s in zip(axes, slices) if isinstance(s, slice)
+        ]
+        landscape = Landscape(resolutions, bounds)
+        landscape.landscape = deepcopy(self.landscape[slices])
+        return landscape
+
     def run_all(self, executor: BaseExecutor) -> NDArray[np.float_]:
         self.landscape = self._run(executor, self._flatten_param_grid()).reshape(
             self.param_resolutions
@@ -227,3 +242,6 @@ class Landscape:
 
     def _unravel_index(self, indices: Sequence[int]) -> tuple[NDArray[np.int_]]:
         return np.unravel_index(indices, self.param_resolutions)
+
+    def __getitem__(self, key: Sequence[slice | int] | slice | int) -> Landscape:
+        return self.slice(key)
