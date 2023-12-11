@@ -234,10 +234,15 @@ class Landscape:
     ) -> NDArray[np.int_]:
         if not isinstance(rng, np.random.Generator):
             rng = np.random.default_rng(rng)
-        return rng.choice(
-            np.arange(self.size)[np.in1d(np.arange(self.size), self._sampled_indices, True, True)],
-            num_samples,
-            replace=False,
+        # return rng.choice(
+        #     np.arange(self.size)[np.in1d(np.arange(self.size), self._sampled_indices, True, True)],
+        #     num_samples,
+        #     replace=False,
+        # )
+        import teneva
+
+        return self._ravel_multi_index(
+            teneva.sample_lhs(self.param_resolutions, num_samples, rng).T
         )
 
     def _unravel_index(self, indices: Sequence[int]) -> tuple[NDArray[np.int_]]:

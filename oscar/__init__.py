@@ -25,6 +25,7 @@ from .reconstruction import (
     BPDNVariantReconstructor,
     BPReconstructor,
     LassoReconstructor,
+    TenevaReconstructor,
 )
 from .visualization import plot_2d_landscape
 
