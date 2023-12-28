@@ -38,7 +38,7 @@ class BaseExecutor(ABC):
         callback: Callable[[Sequence[float], float, float], None] | None = None,
         return_time: bool = False,
         **kwargs,
-    ) -> NDArray[np.float_] | tuple[NDArray[np.float_], NDArray[np.float_] | None]:
+    ) -> NDArray[np.float64] | tuple[NDArray[np.float64], NDArray[np.float64] | None]:
         result = np.array(
             [self.run(params, callback, return_time, **kwargs) for params in params_list]
         )

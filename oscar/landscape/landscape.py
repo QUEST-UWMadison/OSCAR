@@ -35,10 +35,10 @@ class Landscape:
         self.param_resolutions: NDArray[np.int_] = np.array(param_resolutions)
         if not isinstance(param_bounds[0], Iterable):
             param_bounds = [param_bounds] * self.num_params
-        self.param_bounds: NDArray[np.float_] = np.array(param_bounds)
-        self.param_grid: NDArray[np.float_] = self._gen_param_grid()
-        self.landscape: NDArray[np.float_] | None = None
-        self.sampled_landscape: NDArray[np.float_] | None = None
+        self.param_bounds: NDArray[np.float64] = np.array(param_bounds)
+        self.param_grid: NDArray[np.float64] = self._gen_param_grid()
+        self.landscape: NDArray[np.float64] | None = None
+        self.sampled_landscape: NDArray[np.float64] | None = None
         self._sampled_indices: NDArray[np.int_] | None = None
         self._interpolator: RegularGridInterpolator | None = None
 
@@ -60,7 +60,7 @@ class Landscape:
         return 0 if self._sampled_indices is None else len(self._sampled_indices)
 
     @property
-    def optimal_params(self) -> NDArray[np.float_]:
+    def optimal_params(self) -> NDArray[np.float64]:
         lower_bounds, upper_bounds = self.param_bounds.T
         return (
             self.optimal_point_indices / self.param_resolutions * (upper_bounds - lower_bounds)
@@ -125,7 +125,7 @@ class Landscape:
         sampling_fraction: float | None = None,
         num_samples: int | None = None,
         rng: np.random.Generator | int | None = None,
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         if sampling_fraction is None:
             if num_samples is None:
                 raise ValueError("Either `sampling_fraction` or `num_samples` is needed.")
@@ -149,7 +149,7 @@ class Landscape:
         landscape.landscape = deepcopy(self.landscape[slices])
         return landscape
 
-    def run_all(self, executor: BaseExecutor) -> NDArray[np.float_]:
+    def run_all(self, executor: BaseExecutor) -> NDArray[np.float64]:
         self.landscape = self._run(executor, self._flatten_param_grid()).reshape(
             self.param_resolutions
         )
@@ -159,7 +159,7 @@ class Landscape:
         self,
         executor: BaseExecutor,
         param_indices: Sequence[Sequence[int]] | Sequence[int] | int,
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         if isinstance(param_indices, int):
             param_indices = [param_indices]
         if isinstance(param_indices[0], int):
@@ -169,7 +169,7 @@ class Landscape:
 
     def run_flatten_indices(
         self, executor: BaseExecutor, param_indices: Sequence[int] | int
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         if isinstance(param_indices, int):
             param_indices = [param_indices]
         param_indices = np.array(param_indices)
@@ -180,7 +180,7 @@ class Landscape:
         self._add_sampled_landscape(param_indices, result)
         return result
 
-    def reconstruct(self, reconstructor: BaseReconstructor | None = None) -> NDArray[np.float_]:
+    def reconstruct(self, reconstructor: BaseReconstructor | None = None) -> NDArray[np.float64]:
         if reconstructor is None:
             reconstructor = BPReconstructor()
         self.landscape = reconstructor.run(self)
@@ -191,7 +191,7 @@ class Landscape:
         pickle.dump(self, open(filename, "wb"))
 
     def _add_sampled_landscape(
-        self, sampled_indices: NDArray[np.int_], sampled_landscape: NDArray[np.float_]
+        self, sampled_indices: NDArray[np.int_], sampled_landscape: NDArray[np.float64]
     ) -> None:
         if self._sampled_indices is not None:
             sampled_indices = np.concatenate((sampled_indices, self._sampled_indices))
@@ -200,10 +200,10 @@ class Landscape:
         self._sampled_indices = sampled_indices
         self.sampled_landscape = sampled_landscape[value_indices]
 
-    def _flatten_param_grid(self) -> NDArray[np.float_]:
+    def _flatten_param_grid(self) -> NDArray[np.float64]:
         return self.param_grid.reshape(-1, self.num_params)
 
-    def _gen_axes(self) -> list[NDArray[np.float_]]:
+    def _gen_axes(self) -> list[NDArray[np.float64]]:
         return [
             np.linspace(
                 self.param_bounds[i][0],
@@ -213,7 +213,7 @@ class Landscape:
             for i in range(self.num_params)
         ]
 
-    def _gen_param_grid(self) -> NDArray[np.float_]:
+    def _gen_param_grid(self) -> NDArray[np.float64]:
         return np.array(
             np.meshgrid(
                 *self._gen_axes(),
@@ -226,7 +226,7 @@ class Landscape:
 
     def _run(
         self, executor: BaseExecutor, params_list: Sequence[Sequence[float]]
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         return executor.run_batch(params_list)
 
     def _sample_indices(
@@ -235,7 +235,7 @@ class Landscape:
         if not isinstance(rng, np.random.Generator):
             rng = np.random.default_rng(rng)
         return rng.choice(
-            np.arange(self.size)[np.in1d(np.arange(self.size), self._sampled_indices, True, True)],
+            np.arange(self.size)[np.isin(np.arange(self.size), self._sampled_indices, True, True)],
             num_samples,
             replace=False,
         )

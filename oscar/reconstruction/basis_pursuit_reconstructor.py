@@ -9,6 +9,6 @@ from .base_cvxpy_reconstructor import BaseCvxPyReconstructor
 
 class BPReconstructor(BaseCvxPyReconstructor):
     def _build_optimization_problem(
-        self, A: NDArray[np.float_], x: cp.Variable, b: NDArray[np.float_]
+        self, A: NDArray[np.float64], x: cp.Variable, b: NDArray[np.float64]
     ) -> cp.Problem:
         return cp.Problem(cp.Minimize(cp.norm(x, 1)), [A @ x == b])

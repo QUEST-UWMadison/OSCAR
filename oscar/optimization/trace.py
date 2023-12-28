@@ -16,10 +16,10 @@ if TYPE_CHECKING:
 
 @dataclass
 class Trace:
-    params_trace: list[NDArray[np.float_]] = field(default_factory=list)
+    params_trace: list[NDArray[np.float64]] = field(default_factory=list)
     value_trace: list[float] = field(default_factory=list)
     time_trace: list[float] = field(default_factory=list)
-    optimal_params: NDArray[np.float_] | None = None
+    optimal_params: NDArray[np.float64] | None = None
     optimal_value: float | None = None
     num_iters: int | None = None
     num_fun_evals: int | None = None
@@ -41,7 +41,7 @@ class Trace:
         self.num_iters = result["num_iters"]
         self.num_fun_evals = result["num_fun_evals"]
 
-    def update_with_nlopt_result(self, result: opt, optimal_params: NDArray[np.float_]) -> None:
+    def update_with_nlopt_result(self, result: opt, optimal_params: NDArray[np.float64]) -> None:
         self.optimal_params = optimal_params
         self.optimal_value = result.last_optimum_value()
         self.num_iters = result.get_numevals()
@@ -53,7 +53,7 @@ class Trace:
         self.num_iters = result.nit
         self.num_fun_evals = result.nfev
 
-    def update_with_skquant_result(self, result: tuple[Result, NDArray[np.float_]]) -> None:
+    def update_with_skquant_result(self, result: tuple[Result, NDArray[np.float64]]) -> None:
         self.optimal_params = result[0].optpar
         self.optimal_value = result[0].optval
         self.num_fun_evals = len(result[1])

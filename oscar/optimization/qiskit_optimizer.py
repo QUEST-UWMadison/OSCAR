@@ -37,7 +37,7 @@ class QiskitOptimizer(BaseOptimizer):
         executor: BaseExecutor,
         initial_point: Sequence[float],
         executor_kwargs: dict[str, Any] | None = None,
-        jacobian: Callable[[NDArray[np.float_]], NDArray[np.float_]] | None = None,
+        jacobian: Callable[[NDArray[np.float64]], NDArray[np.float64]] | None = None,
         bounds: Sequence[tuple[float, float]] | None = None,
         **kwargs,
     ) -> tuple[Trace, OptimizerResult]:

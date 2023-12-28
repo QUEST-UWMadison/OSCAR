@@ -15,7 +15,7 @@ class BPDNReconstructor(BaseCvxPyReconstructor):
         super().__init__(solver, **solver_kwargs)
 
     def _build_optimization_problem(
-        self, A: NDArray[np.float_], x: cp.Variable, b: NDArray[np.float_]
+        self, A: NDArray[np.float64], x: cp.Variable, b: NDArray[np.float64]
     ) -> cp.Problem:
         return cp.Problem(
             cp.Minimize(self.normalization_factor * cp.norm(x, 1) + cp.norm(A @ x - b, 2) ** 2)

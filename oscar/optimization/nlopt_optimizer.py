@@ -34,22 +34,22 @@ class NLoptOptimizer(BaseOptimizer):
         executor_kwargs: dict[str, Any] | None = None,
         bounds: Sequence[tuple[float, float]] | None = None,
         equality_constraints: Sequence[
-            tuple[Callable[[Sequence[float], NDArray[np.float_]], float], float]
+            tuple[Callable[[Sequence[float], NDArray[np.float64]], float], float]
         ]
         | Sequence[
             tuple[
-                Callable[[NDArray[np.float_], Sequence[float], NDArray[np.float_]], float],
-                NDArray[np.float_],
+                Callable[[NDArray[np.float64], Sequence[float], NDArray[np.float64]], float],
+                NDArray[np.float64],
             ]
         ]
         | None = None,
         inequality_constraints: Sequence[
-            tuple[Callable[[Sequence[float], NDArray[np.float_]], float], float]
+            tuple[Callable[[Sequence[float], NDArray[np.float64]], float], float]
         ]
         | Sequence[
             tuple[
-                Callable[[NDArray[np.float_], Sequence[float], NDArray[np.float_]], float],
-                NDArray[np.float_],
+                Callable[[NDArray[np.float64], Sequence[float], NDArray[np.float64]], float],
+                NDArray[np.float64],
             ]
         ]
         | None = None,
@@ -71,7 +71,7 @@ class NLoptOptimizer(BaseOptimizer):
             executor_kwargs = {}
         trace = Trace()
 
-        def objective_wrapper(params: Sequence[float], gradient: NDArray[np.float_]) -> float:
+        def objective_wrapper(params: Sequence[float], gradient: NDArray[np.float64]) -> float:
             if gradient.size > 0:
                 raise NotImplementedError("NLopt gradient-based algorithms are not supported yet.")
             return executor.run(params, callback=trace.append, **executor_kwargs)

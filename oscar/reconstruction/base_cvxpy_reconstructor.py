@@ -22,7 +22,7 @@ class BaseCvxPyReconstructor(BaseReconstructor):
         self.solver: str | None = solver
         self.solver_kwargs: dict[str, Any] = solver_kwargs
 
-    def run(self, landscape: Landscape) -> NDArray[np.float_]:
+    def run(self, landscape: Landscape) -> NDArray[np.float64]:
         if landscape.sampled_landscape is None:
             raise RuntimeError(
                 "Sampled landscape is not present. Use `Landscape.sample_and_run()`, "
@@ -40,12 +40,12 @@ class BaseCvxPyReconstructor(BaseReconstructor):
             x = idct(x, norm="ortho", axis=i)
         return x
 
-    def _build_idct_operator(self, shape: Sequence[int]) -> NDArray[np.float_]:
+    def _build_idct_operator(self, shape: Sequence[int]) -> NDArray[np.float64]:
         return reduce(np.kron, (idct(np.identity(n), norm="ortho", axis=0) for n in shape))
 
     @abstractmethod
     def _build_optimization_problem(
-        self, A: NDArray[np.float_], x: cp.Variable, b: NDArray[np.float_]
+        self, A: NDArray[np.float64], x: cp.Variable, b: NDArray[np.float64]
     ) -> cp.Problem:
         pass
 

@@ -12,5 +12,5 @@ if TYPE_CHECKING:
 
 class BaseReconstructor(ABC):
     @abstractmethod
-    def run(self, lanscape: Landscape) -> NDArray[np.float_]:
+    def run(self, lanscape: Landscape) -> NDArray[np.float64]:
         pass

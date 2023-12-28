@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class CustomOptimizer(BaseOptimizer):
     def __init__(
-        self, optimizer: Callable[[NDArray[np.float_]], Mapping[str, Any]], name: str | None = None
+        self, optimizer: Callable[[NDArray[np.float64]], Mapping[str, Any]], name: str | None = None
     ) -> None:
         self.optimizer: Callable[[Sequence[float]], Mapping[str, Any]] = optimizer
         if name is None:
