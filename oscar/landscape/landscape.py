@@ -12,8 +12,6 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 
-from oscar import landscape
-
 from ..execution.base_executor import BaseExecutor
 from ..reconstruction import BPReconstructor
 
