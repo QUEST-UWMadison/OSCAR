@@ -19,6 +19,7 @@ from .landscape_data import (
     TensorLandscapeData,
     TensorNetworkLandscapeData,
 )
+from .utils import complete_slices
 
 if TYPE_CHECKING:
     from ..reconstruction.base_reconstructor import BaseReconstructor
@@ -74,7 +75,7 @@ class Landscape:
 
     @property
     def optimal_point_indices(self) -> NDArray[np.int_]:
-        return np.array(self._unravel_index(self.landscape.argmin)).flatten()
+        return np.array(self.unravel_index(self.landscape.argmin)).flatten()
 
     @property
     def optimal_value(self) -> float:
@@ -92,7 +93,7 @@ class Landscape:
     def sampled_indices(self) -> Sequence[NDArray[np.int_]] | None:
         if self._sampled_indices is None:
             return None
-        return self._unravel_index(self._sampled_indices)
+        return self.unravel_index(self._sampled_indices)
 
     @property
     def sampling_fraction(self) -> float:
@@ -141,18 +142,21 @@ class Landscape:
                 raise ValueError("Supply only one of `sampling_fraction` and `num_samples`.")
         return self.run_flatten_indices(executor, self._sample_indices(num_samples, rng))
 
-    def slice(self, slices: Sequence[slice | int] | slice | int) -> Landscape:
-        if isinstance(slices, int) or isinstance(slices, slice):
-            slices = [slices]
-        slices = tuple(slices) + (slice(None),) * (self.num_params - len(slices))
+    def slice(self, slices: Sequence[slice | int] | slice | int) -> Landscape | float:
+        slices = complete_slices(slices, self.num_params)
+        data = self.landscape[slices]
+        if not isinstance(data, LandscapeData):
+            return data
         axes = self._gen_axes()
-        resolutions = [len(axis[s]) for axis, s in zip(axes, slices) if isinstance(s, slice)]
-        bounds = [
-            (axis[s][0], axis[s][-1]) for axis, s in zip(axes, slices) if isinstance(s, slice)
-        ]
-        landscape = Landscape(resolutions, bounds)
-        landscape.landscape = deepcopy(self.landscape[slices])
+        landscape = Landscape(
+            [len(axis[s]) for axis, s in zip(axes, slices) if isinstance(s, slice)],
+            [(axis[s][0], axis[s][-1]) for axis, s in zip(axes, slices) if isinstance(s, slice)],
+        )
+        landscape.landscape = data
         return landscape
+
+    def ravel_multi_index(self, indices: Sequence[NDArray[np.int_]]) -> NDArray[np.int_]:
+        return np.ravel_multi_index(indices, self.param_resolutions)
 
     def run_all(self, executor: BaseExecutor) -> NDArray[np.float_]:
         self.landscape = self._run(executor, self._flatten_param_grid()).reshape(
@@ -169,7 +173,7 @@ class Landscape:
             param_indices = [param_indices]
         if isinstance(param_indices[0], int):
             param_indices = tuple([i] for i in param_indices)
-        param_indices = self._ravel_multi_index(param_indices)
+        param_indices = self.ravel_multi_index(param_indices)
         return self.run_flatten_indices(executor, param_indices)
 
     def run_flatten_indices(
@@ -203,6 +207,9 @@ class Landscape:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         pickle.dump(self, open(filename, "wb"))
 
+    def unravel_index(self, indices: Sequence[int]) -> tuple[NDArray[np.int_]]:
+        return np.unravel_index(indices, self.param_resolutions)
+
     def _add_sampled_landscape(
         self, sampled_indices: NDArray[np.int_], sampled_landscape: NDArray[np.float_]
     ) -> None:
@@ -234,9 +241,6 @@ class Landscape:
             )
         ).transpose((*range(1, self.num_params + 1), 0))
 
-    def _ravel_multi_index(self, indices: Sequence[NDArray[np.int_]]) -> NDArray[np.int_]:
-        return np.ravel_multi_index(indices, self.param_resolutions)
-
     def _run(
         self, executor: BaseExecutor, params_list: Sequence[Sequence[float]]
     ) -> NDArray[np.float_]:
@@ -254,12 +258,9 @@ class Landscape:
         # )
         import teneva
 
-        return self._ravel_multi_index(
+        return self.ravel_multi_index(
             teneva.sample_lhs(self.param_resolutions, num_samples, rng).T
         )
 
-    def _unravel_index(self, indices: Sequence[int]) -> tuple[NDArray[np.int_]]:
-        return np.unravel_index(indices, self.param_resolutions)
-
-    def __getitem__(self, key: Sequence[slice | int] | slice | int) -> Landscape:
+    def __getitem__(self, key: Sequence[slice | int] | slice | int) -> Landscape | float:
         return self.slice(key)

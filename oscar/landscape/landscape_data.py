@@ -8,6 +8,8 @@ import numpy as np
 import teneva
 from numpy.typing import NDArray
 
+from .utils import complete_slices
+
 
 class LandscapeData:
     def __init__(self, data: NDArray[np.float_] | list[NDArray[np.float_]]) -> None:
@@ -34,7 +36,7 @@ class LandscapeData:
         pass
 
     @abstractmethod
-    def slice(self, slices: Sequence[slice | int] | slice | int) -> LandscapeData:
+    def slice(self, slices: Sequence[slice | int] | slice | int) -> LandscapeData | float:
         pass
 
     @abstractmethod
@@ -76,8 +78,11 @@ class TensorLandscapeData(LandscapeData):
     def argmax(self) -> int:
         return np.argmax(self.data)
 
-    def slice(self, slices: Sequence[slice | int] | slice | int) -> TensorLandscapeData:
-        return TensorLandscapeData(self.data[slices])
+    def slice(self, slices: Sequence[slice | int] | slice | int) -> TensorLandscapeData | float:
+        data = self.data[slices]
+        if isinstance(data, NDArray):
+            return TensorLandscapeData(data)
+        return data
 
     def to_dense(self) -> TensorLandscapeData:
         return self
@@ -88,38 +93,50 @@ class TensorLandscapeData(LandscapeData):
     def to_numpy(self) -> NDArray[np.float_]:
         return self.data
 
-    class TensorNetworkLandscapeData(LandscapeData):
-        def __init__(self, data: list[NDArray[np.float_]]) -> None:
-            super().__init__(data)
+class TensorNetworkLandscapeData(LandscapeData):
+    def __init__(self, data: list[NDArray[np.float_]]) -> None:
+        super().__init__(data)
 
-        @property
-        def min(self) -> float:
-            raise NotImplementedError()
+    @property
+    def min(self) -> float:
+        raise NotImplementedError()
 
-        @property
-        def max(self) -> float:
-            raise NotImplementedError()
+    @property
+    def max(self) -> float:
+        raise NotImplementedError()
 
-        @property
-        def argmin(self) -> int:
-            raise NotImplementedError()
+    @property
+    def argmin(self) -> int:
+        raise NotImplementedError()
 
-        @property
-        def argmax(self) -> int:
-            raise NotImplementedError()
-
-        def slice(self, slices: Sequence[slice | int] | slice | int) -> TensorNetworkLandscapeData:
-            if isinstance(slices, int) or isinstance(slices, slice):
-                slices = [slices]
-            slices = tuple(slices) + (slice(None),) * (len(self.data) - len(slices))
-            # TODO: handle int slices
-            return TensorNetworkLandscapeData([tsr[:, slices[i]] for i, tsr in enumerate(self.data) if tsr.shape[1] != 1])
-
-        def to_dense(self) -> TensorLandscapeData:
-            return TensorLandscapeData(self.to_numpy())
-
-        def to_tensor_network(self) -> TensorNetworkLandscapeData:
-            return self
+    @property
+    def argmax(self) -> int:
+        raise NotImplementedError()
     
-        def to_numpy(self) -> NDArray[np.float_]:
-            return teneva.full(self.data)
+    @property
+    def _pseudo_indices_view(self) -> NDArray[np.float_]:
+        return [tsr[:, None, :] for tsr in self.data if tsr.ndim == 2]
+
+    def slice(self, slices: Sequence[slice | int] | slice | int) -> TensorNetworkLandscapeData | float:
+        if isinstance(slices, int) or isinstance(slices, slice):
+            slices = [slices]
+        slices = complete_slices(slices, len(self.data))
+        if all(isinstance(s, int) for s in slices):
+            return teneva.get(self._pseudo_indices_view, slices)
+        tensors, i = [], 0
+        for tsr in self.data:
+            if tsr.ndim == 2:
+                tensors.append(tsr)
+            else:
+                tensors.append(tsr[:, slices[i]])
+                i += 1
+        return TensorNetworkLandscapeData(tensors)
+
+    def to_dense(self) -> TensorLandscapeData:
+        return TensorLandscapeData(self.to_numpy())
+
+    def to_tensor_network(self) -> TensorNetworkLandscapeData:
+        return self
+
+    def to_numpy(self) -> NDArray[np.float_]:
+        return teneva.full(self._pseudo_indices_view)
