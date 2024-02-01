@@ -12,10 +12,13 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 
-from oscar import landscape
-
 from ..execution.base_executor import BaseExecutor
 from ..reconstruction import BPReconstructor
+from .landscape_data import (
+    LandscapeData,
+    TensorLandscapeData,
+    TensorNetworkLandscapeData,
+)
 
 if TYPE_CHECKING:
     from ..reconstruction.base_reconstructor import BaseReconstructor
@@ -35,9 +38,11 @@ class Landscape:
         self.param_resolutions: NDArray[np.int_] = np.array(param_resolutions)
         if not isinstance(param_bounds[0], Iterable):
             param_bounds = [param_bounds] * self.num_params
+        elif len(param_bounds) != self.num_params:
+            raise ValueError("Dimensions of resolutions and bounds do not match")
         self.param_bounds: NDArray[np.float_] = np.array(param_bounds)
         self.param_grid: NDArray[np.float_] = self._gen_param_grid()
-        self.landscape: NDArray[np.float_] | None = None
+        self.landscape: LandscapeData | None = None
         self.sampled_landscape: NDArray[np.float_] | None = None
         self._sampled_indices: NDArray[np.int_] | None = None
         self._interpolator: RegularGridInterpolator | None = None
@@ -69,11 +74,11 @@ class Landscape:
 
     @property
     def optimal_point_indices(self) -> NDArray[np.int_]:
-        return np.array(self._unravel_index(np.argmin(self.landscape))).flatten()
+        return np.array(self._unravel_index(self.landscape.argmin)).flatten()
 
     @property
     def optimal_value(self) -> float:
-        return np.min(self.landscape)
+        return self.landscape.min
 
     @property
     def shape(self) -> tuple[int]:
@@ -104,7 +109,7 @@ class Landscape:
     ) -> RegularGridInterpolator:
         self._interpolator = RegularGridInterpolator(
             self._gen_axes(),
-            self.landscape,
+            self.landscape.to_numpy(),  # TODO: implement tensor network version
             method,
             bounds_error,
             fill_value,
@@ -184,6 +189,14 @@ class Landscape:
         if reconstructor is None:
             reconstructor = BPReconstructor()
         self.landscape = reconstructor.run(self)
+        return self.landscape
+
+    def to_dense(self) -> TensorLandscapeData:
+        self.landscape = self.landscape.to_dense()
+        return self.landscape
+
+    def to_tensor_network(self) -> TensorNetworkLandscapeData:
+        self.landscape = self.landscape.to_tensor_network()
         return self.landscape
 
     def save(self, filename: str) -> None:
