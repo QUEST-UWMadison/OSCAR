@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from ast import Not
+from functools import lru_cache
 from typing import Sequence
 
 import numpy as np
@@ -15,24 +15,20 @@ class LandscapeData:
     def __init__(self, data: NDArray[np.float_] | list[NDArray[np.float_]]) -> None:
         self.data: NDArray[np.float_] | list[NDArray[np.float_]] = data
 
-    @property
     @abstractmethod
     def min(self) -> float:
         pass
 
-    @property
     @abstractmethod
     def max(self) -> float:
         pass
 
-    @property
     @abstractmethod
-    def argmin(self) -> int:
+    def argmin(self) -> NDArray[np.int_]:
         pass
 
-    @property
     @abstractmethod
-    def argmax(self) -> int:
+    def argmax(self) -> NDArray[np.int_]:
         pass
 
     @abstractmethod
@@ -62,21 +58,17 @@ class TensorLandscapeData(LandscapeData):
     def __init__(self, data: NDArray[np.float_]) -> None:
         super().__init__(data)
 
-    @property
     def min(self) -> float:
         return np.min(self.data)
 
-    @property
     def max(self) -> float:
         return np.max(self.data)
 
-    @property
-    def argmin(self) -> int:
+    def argmin(self) -> NDArray[np.int_]:
         return np.argmin(self.data)
 
-    @property
-    def argmax(self) -> int:
-        return np.argmax(self.data)
+    def argmax(self) -> NDArray[np.int_]:
+        return np.unravel_index(np.argmax(self.data), self.data.shape)
 
     def slice(self, slices: Sequence[slice | int] | slice | int) -> TensorLandscapeData | float:
         data = self.data[slices]
@@ -93,31 +85,36 @@ class TensorLandscapeData(LandscapeData):
     def to_numpy(self) -> NDArray[np.float_]:
         return self.data
 
+
 class TensorNetworkLandscapeData(LandscapeData):
     def __init__(self, data: list[NDArray[np.float_]]) -> None:
         super().__init__(data)
 
     @property
-    def min(self) -> float:
-        raise NotImplementedError()
-
-    @property
-    def max(self) -> float:
-        raise NotImplementedError()
-
-    @property
-    def argmin(self) -> int:
-        raise NotImplementedError()
-
-    @property
-    def argmax(self) -> int:
-        raise NotImplementedError()
-    
-    @property
     def _pseudo_indices_view(self) -> NDArray[np.float_]:
         return [tsr[:, None, :] for tsr in self.data if tsr.ndim == 2]
 
-    def slice(self, slices: Sequence[slice | int] | slice | int) -> TensorNetworkLandscapeData | float:
+    def min(self, num_candidates: int = 100) -> float:
+        return self.compute_minima(num_candidates)[1]
+
+    def max(self, num_candidates: int = 100) -> float:
+        return self.compute_minima(num_candidates)[3]
+
+    def argmin(self, num_candidates: int = 100) -> NDArray[np.int_]:
+        return self.compute_minima(num_candidates)[0]
+
+    def argmax(self, num_candidates: int = 100) -> NDArray[np.int_]:
+        return self.compute_minima(num_candidates)[2]
+
+    @lru_cache
+    def compute_minima(
+        self, num_candidates: int = 100
+    ) -> tuple[NDArray[np.int_], float, NDArray[np.int_], float]:
+        return teneva.optima_tt(self._pseudo_indices_view, num_candidates)
+
+    def slice(
+        self, slices: Sequence[slice | int] | slice | int
+    ) -> TensorNetworkLandscapeData | float:
         if isinstance(slices, int) or isinstance(slices, slice):
             slices = [slices]
         slices = complete_slices(slices, len(self.data))

@@ -9,6 +9,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Iterable, Literal
 
 import numpy as np
+import teneva
 from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 
@@ -75,11 +76,11 @@ class Landscape:
 
     @property
     def optimal_point_indices(self) -> NDArray[np.int_]:
-        return np.array(self.unravel_index(self.landscape.argmin)).flatten()
+        return self.argmin()
 
     @property
     def optimal_value(self) -> float:
-        return self.landscape.min
+        return self.min()
 
     @property
     def shape(self) -> tuple[int]:
@@ -98,6 +99,18 @@ class Landscape:
     @property
     def sampling_fraction(self) -> float:
         return self.num_samples / self.size
+    
+    def argmax(self, *args, **kwargs) -> NDArray[np.int_]:
+        return self.landscape.argmax(*args, **kwargs)
+    
+    def argmin(self, *args, **kwargs) -> NDArray[np.int_]:
+        return self.landscape.argmin(*args, **kwargs)
+    
+    def max(self, *args, **kwargs) -> float:
+        return self.landscape.max(*args, **kwargs)
+    
+    def min(self, *args, **kwargs) -> float:
+        return self.landscape.min(*args, **kwargs)
 
     def copy(self) -> Landscape:
         return deepcopy(self)
@@ -195,13 +208,19 @@ class Landscape:
         self.landscape = reconstructor.run(self)
         return self.landscape
 
-    def to_dense(self) -> TensorLandscapeData:
-        self.landscape = self.landscape.to_dense()
-        return self.landscape
+    def to_dense(self) -> Landscape:
+        if isinstance(self.landscape, TensorLandscapeData):
+            return self
+        landscape = Landscape.like(self)
+        landscape.landscape = self.landscape.to_dense()
+        return landscape
 
-    def to_tensor_network(self) -> TensorNetworkLandscapeData:
-        self.landscape = self.landscape.to_tensor_network()
-        return self.landscape
+    def to_tensor_network(self) -> Landscape:
+        if isinstance(self.landscape, TensorNetworkLandscapeData):
+            return self
+        landscape = Landscape.like(self)
+        landscape.landscape = self.landscape.to_tensor_network()
+        return landscape
 
     def save(self, filename: str) -> None:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -256,7 +275,6 @@ class Landscape:
         #     num_samples,
         #     replace=False,
         # )
-        import teneva
 
         return self.ravel_multi_index(
             teneva.sample_lhs(self.param_resolutions, num_samples, rng).T
