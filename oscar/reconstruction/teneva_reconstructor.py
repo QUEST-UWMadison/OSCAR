@@ -3,8 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+import quimb
+import quimb.tensor as qtn
 import teneva
 from numpy.typing import NDArray
+from scipy.fft import idct
+
+from ..landscape.landscape_data import TensorNetworkLandscapeData
 
 if TYPE_CHECKING:
     from ..landscape.landscape import Landscape
@@ -24,7 +29,7 @@ class TenevaReconstructor(BaseReconstructor):
                 "`Landscape.run_with_indices()`, or `Landscape.run_with_flatten_indices()`."
             )
 
-        sampled_indices = np.array(landscape._unravel_index(landscape._sampled_indices)).T
+        sampled_indices = np.asarray(landscape.unravel_index(landscape.sampled_indices)).T
         tensors = teneva.anova(
             sampled_indices,
             landscape.sampled_landscape,
@@ -34,6 +39,15 @@ class TenevaReconstructor(BaseReconstructor):
             sampled_indices, landscape.sampled_landscape, tensors, **self.als_args
         )
         # return teneva.get_many(
-        #     tensors, np.array(landscape._unravel_index(np.arange(landscape.size))).T
+        #     tensors, np.asarray(landscape._unravel_index(np.arange(landscape.size))).T
         # ).reshape(landscape.shape)
-        return teneva.full(tensors)
+        return TensorNetworkLandscapeData(tensors)
+
+        # tensors[0] = tensors[0].reshape(tensors[0].shape[1:])
+        # tensors[-1] = tensors[-1].reshape(tensors[-1].shape[:-1])
+        # dmrg = qtn.DMRGX(A, bond_dims=64, cutoffs=1e-10, p0=b)
+        # dmrg.solve(verbosity=1)
+        # x = dmrg.state.to_dense().reshape(shape)
+        for i in range(len(shape)):
+            x = idct(x, norm="ortho", axis=i)
+        return x
