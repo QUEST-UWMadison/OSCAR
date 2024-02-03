@@ -26,12 +26,8 @@ class CustomExecutor(BaseExecutor):
         self,
         params_list: Sequence[Sequence[float]],
         callback: Callable[[Sequence[float], float, float], None] | None = None,
-        return_time: bool = False,
         **kwargs,
-    ) -> NDArray[np.float_] | tuple[NDArray[np.float_], NDArray[np.float_] | None]:
+    ) -> NDArray[np.float_]:
         if self.batch_function is None:
             return super().run_batch(params_list, callback)
-        result = np.array(self.batch_function(params_list, **kwargs))
-        if return_time:
-            return result, None
-        return result
+        return np.asarray(self.batch_function(params_list, **kwargs))

@@ -20,31 +20,22 @@ class BaseExecutor(ABC):
         self,
         params: Sequence[float],
         callback: Callable[[Sequence[float], float, float], None] | None = None,
-        return_time: bool = False,
         **kwargs,
-    ) -> float | tuple[float, float]:
+    ) -> float:
         start_time = time()
         value = self._run(params, **kwargs)
         runtime = time() - start_time
         if callback is not None:
             callback(params, value, runtime)
-        if return_time:
-            return value, runtime
         return value
 
     def run_batch(
         self,
         params_list: Sequence[Sequence[float]],
         callback: Callable[[Sequence[float], float, float], None] | None = None,
-        return_time: bool = False,
         **kwargs,
-    ) -> NDArray[np.float_] | tuple[NDArray[np.float_], NDArray[np.float_] | None]:
-        result = np.array(
-            [self.run(params, callback, return_time, **kwargs) for params in params_list]
-        )
-        if return_time:
-            return result.T[0], result.T[1]
-        return result
+    ) -> NDArray[np.float_]:
+        return np.asarray([self.run(params, callback, **kwargs) for params in params_list])
 
     def run_with_trace(
         self,
@@ -54,8 +45,14 @@ class BaseExecutor(ABC):
     ) -> Trace:
         new_trace = Trace()
         new_trace.params_trace = deepcopy(trace.params_trace)
-        value, runtime = self.run_batch(trace.params_trace, callback, True, **kwargs)
+        time_trace = []
+
+        def append_time(params: Sequence[float], value: float, runtime: float) -> None:
+            time_trace.append(runtime)
+            if callback is not None:
+                callback(params, value, runtime)
+
+        value = self.run_batch(trace.params_trace, append_time, **kwargs)
         new_trace.value_trace = value.tolist()
-        if isinstance(runtime, np.ndarray):
-            new_trace.time_trace = runtime.tolist()
+        new_trace.time_trace = time_trace
         return new_trace

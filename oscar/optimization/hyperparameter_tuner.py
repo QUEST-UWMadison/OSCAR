@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator, Sequence
+from copy import deepcopy
 from itertools import product
 from typing import TYPE_CHECKING, Any
-from copy import deepcopy
 
 import numpy as np
 from numpy.typing import NDArray
@@ -56,7 +56,7 @@ class HyperparameterGrid(dict):
             single_idx = True
             indices = [indices]
         ret = []
-        for index in np.array(np.unravel_index(indices, self.shape)).T:
+        for index in np.asarray(np.unravel_index(indices, self.shape)).T:
             ret.append([])
             for idx, (key, value) in zip(index, self.items()):
                 if not ignore_fixed_config or len(value) != 1:

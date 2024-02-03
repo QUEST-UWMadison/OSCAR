@@ -35,7 +35,7 @@ def plot_2d_landscape(
     else:
         custom_plot_landscape_func(landscape.landscape.to_numpy().T)
     if trace is not None:
-        params_trace = np.array(trace.params_trace).T
+        params_trace = np.asarray(trace.params_trace).T
         if custom_plot_trace_func is None:
             plt.plot(
                 *params_trace,
