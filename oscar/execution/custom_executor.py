@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,11 +12,11 @@ class CustomExecutor(BaseExecutor):
     def __init__(
         self,
         function: Callable[[Sequence[float]], float],
-        batch_function: Callable[[Sequence[Sequence[float]]], Sequence[float]] | None = None,
+        batch_function: Callable[[Sequence[Sequence[float]]], Iterable[float]] | None = None,
     ) -> None:
         self.function: Callable[[Sequence[float]], float] = function
         self.batch_function: Callable[
-            [Sequence[Sequence[float]]], Sequence[float]
+            [Sequence[Sequence[float]]], Iterable[float]
         ] | None = batch_function
 
     def _run(self, params: Sequence[float], **kwargs) -> float:
@@ -24,10 +24,10 @@ class CustomExecutor(BaseExecutor):
 
     def run_batch(
         self,
-        params_list: Sequence[Sequence[float]],
+        params_list: Iterable[Sequence[float]],
         callback: Callable[[Sequence[float], float, float], None] | None = None,
         **kwargs,
-    ) -> NDArray[np.float_]:
+    ) -> Iterable[float]:
         if self.batch_function is None:
             return super().run_batch(params_list, callback)
-        return np.asarray(self.batch_function(params_list, **kwargs))
+        return self.batch_function(params_list, **kwargs)

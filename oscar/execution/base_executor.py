@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Iterable, Sequence
 from copy import deepcopy
 from time import time
-
-import numpy as np
-from numpy.typing import NDArray
 
 from ..optimization import Trace
 
@@ -31,11 +28,12 @@ class BaseExecutor(ABC):
 
     def run_batch(
         self,
-        params_list: Sequence[Sequence[float]],
+        params_list: Iterable[Sequence[float]],
         callback: Callable[[Sequence[float], float, float], None] | None = None,
         **kwargs,
-    ) -> NDArray[np.float_]:
-        return np.asarray([self.run(params, callback, **kwargs) for params in params_list])
+    ) -> Generator[float, None, None]:
+        for params in params_list:
+            yield self.run(params, callback, **kwargs)
 
     def run_with_trace(
         self,
@@ -52,7 +50,6 @@ class BaseExecutor(ABC):
             if callback is not None:
                 callback(params, value, runtime)
 
-        value = self.run_batch(trace.params_trace, append_time, **kwargs)
-        new_trace.value_trace = value.tolist()
+        new_trace.value_trace = list(self.run_batch(trace.params_trace, append_time, **kwargs))
         new_trace.time_trace = time_trace
         return new_trace
