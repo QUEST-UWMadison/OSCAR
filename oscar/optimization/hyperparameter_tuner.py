@@ -21,7 +21,7 @@ class HyperparameterSet(dict):
         self.optimizer: BaseOptimizer = optimizer
 
     @property
-    def shape(self) -> tuple[int]:
+    def shape(self) -> tuple[int, ...]:
         return tuple(
             len(self.values()),
         )
@@ -37,7 +37,7 @@ class HyperparameterGrid(dict):
         return self.optimizer.name()
 
     @property
-    def shape(self) -> tuple[int]:
+    def shape(self) -> tuple[int, ...]:
         return tuple(len(values) for values in self.values())
 
     def generate_hyperparameter_sets(self) -> Iterator[HyperparameterSet]:
@@ -67,14 +67,14 @@ class HyperparameterGrid(dict):
 class HyperparameterTuner:
     def __init__(self, configs: Sequence[HyperparameterGrid | Iterable[HyperparameterSet]]):
         self.configs: Sequence[HyperparameterGrid | Iterable[HyperparameterSet]] = configs
-        self.shapes: dict[str, tuple[int]] = {}
+        self.shapes: dict[str, tuple[int, ...]] = {}
         self.traces: dict[str, Trace] = {}
         self.results: dict[str, Any] = {}
         for config_set in self.configs:
             self.shapes[config_set.method] = config_set.shape
 
     @property
-    def methods(self) -> tuple[str]:
+    def methods(self) -> tuple[str, ...]:
         return tuple(config_set.method for config_set in self.configs)
 
     def run(
