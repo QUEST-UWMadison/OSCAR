@@ -12,8 +12,13 @@ from .utils import complete_slices
 
 
 class LandscapeData:
-    def __init__(self, data: NDArray[np.float_] | list[NDArray[np.float_]]) -> None:
-        self.data: NDArray[np.float_] | list[NDArray[np.float_]] = data
+    def __init__(self, data: NDArray[np.float_] | Sequence[NDArray[np.float_]]) -> None:
+        self.data: NDArray[np.float_] | tuple[NDArray[np.float_], ...] = data
+
+    @property
+    @abstractmethod
+    def shape(self) -> tuple[int, ...]:
+        pass
 
     @abstractmethod
     def min(self) -> float:
@@ -58,6 +63,10 @@ class TensorLandscapeData(LandscapeData):
     def __init__(self, data: NDArray[np.float_]) -> None:
         super().__init__(data)
 
+    @property
+    def shape(self) -> tuple[int, ...]:
+        return self.data.shape
+
     def min(self) -> float:
         return np.min(self.data)
 
@@ -65,10 +74,10 @@ class TensorLandscapeData(LandscapeData):
         return np.max(self.data)
 
     def argmin(self) -> NDArray[np.int_]:
-        return np.argmin(self.data)
+        return np.unravel_index(np.argmin(self.data), self.shape)
 
     def argmax(self) -> NDArray[np.int_]:
-        return np.unravel_index(np.argmax(self.data), self.data.shape)
+        return np.unravel_index(np.argmax(self.data), self.shape)
 
     def slice(self, slices: Sequence[slice | int] | slice | int) -> TensorLandscapeData | float:
         data = self.data[slices]
@@ -87,29 +96,39 @@ class TensorLandscapeData(LandscapeData):
 
 
 class TensorNetworkLandscapeData(LandscapeData):
-    def __init__(self, data: list[NDArray[np.float_]]) -> None:
-        super().__init__(data)
+    def __init__(self, data: Sequence[NDArray[np.float_]]) -> None:
+        super().__init__(tuple(data))
+
+    @property
+    def active_tensors(self) -> tuple[NDArray[np.float_], ...]:
+        return tuple(tsr for tsr in self.data if tsr.ndim == 3)
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        return tuple(tsr.shape[1] for tsr in self.active_tensors)
 
     @property
     def _pseudo_indices_view(self) -> NDArray[np.float_]:
-        return [tsr[:, None, :] for tsr in self.data if tsr.ndim == 2]
+        return [tsr[:, None, :] if tsr.ndim == 2 else tsr for tsr in self.data]
 
-    def min(self, num_candidates: int = 100) -> float:
+    def min(self, num_candidates: int | None = None) -> float:
         return self.compute_minima(num_candidates)[1]
 
-    def max(self, num_candidates: int = 100) -> float:
+    def max(self, num_candidates: int | None = None) -> float:
         return self.compute_minima(num_candidates)[3]
 
-    def argmin(self, num_candidates: int = 100) -> NDArray[np.int_]:
+    def argmin(self, num_candidates: int | None = None) -> NDArray[np.int_]:
         return self.compute_minima(num_candidates)[0]
 
-    def argmax(self, num_candidates: int = 100) -> NDArray[np.int_]:
+    def argmax(self, num_candidates: int | None = None) -> NDArray[np.int_]:
         return self.compute_minima(num_candidates)[2]
 
     @lru_cache
     def compute_minima(
-        self, num_candidates: int = 100
+        self, num_candidates: int | None = None
     ) -> tuple[NDArray[np.int_], float, NDArray[np.int_], float]:
+        if num_candidates is None:
+            num_candidates = min(tsr.shape[1] for tsr in self.active_tensors)
         return teneva.optima_tt(self._pseudo_indices_view, num_candidates)
 
     def slice(
@@ -136,4 +155,4 @@ class TensorNetworkLandscapeData(LandscapeData):
         return self
 
     def to_numpy(self) -> NDArray[np.float_]:
-        return teneva.full(self._pseudo_indices_view)
+        return teneva.full(self._pseudo_indices_view).reshape(self.shape)
