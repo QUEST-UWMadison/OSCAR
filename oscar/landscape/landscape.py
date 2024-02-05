@@ -16,7 +16,7 @@ from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 
 from ..execution.base_executor import BaseExecutor
-from ..reconstruction.basis_pursuit_reconstructor import BPReconstructor
+from ..reconstruction.compressed_sensing_reconstructor import CSReconstructor
 from .landscape_data import (
     LandscapeData,
     TensorLandscapeData,
@@ -32,8 +32,7 @@ class Landscape:
     def __init__(
         self,
         param_resolutions: Sequence[int],
-        param_bounds: Sequence[tuple[float, float]]
-        | tuple[float, float] = (
+        param_bounds: Sequence[tuple[float, float]] | tuple[float, float] = (
             -math.pi / 2,
             math.pi / 2,
         ),
@@ -81,10 +80,10 @@ class Landscape:
 
     @property
     def optimal_params(self) -> NDArray[np.float_]:
-        return self.indices_to_params(self.optimal_point_indices)
+        return self.index_to_param(self.optimal_point_index)
 
     @property
-    def optimal_point_indices(self) -> NDArray[np.int_]:
+    def optimal_point_index(self) -> NDArray[np.int_]:
         return self.argmin()
 
     @property
@@ -123,13 +122,9 @@ class Landscape:
 
     def copy(self) -> Landscape:
         return deepcopy(self)
-    
-    def indices_to_params(self, indices: Sequence[NDArray[np.int_]]) -> NDArray[np.float_]:
-        lower_bounds, upper_bounds = self.param_bounds.T
-        return (
-            indices / self.param_resolutions * (upper_bounds - lower_bounds)
-            + lower_bounds
-        )
+
+    def index_to_param(self, index: Sequence[Sequence[np.int_]]) -> NDArray[np.float_]:
+        return np.array([axis[i] for i, axis in zip(index, self.axes)])
 
     def interpolate(
         self,
@@ -169,7 +164,7 @@ class Landscape:
                 num_samples = round(sampling_fraction * self.size)
             else:
                 raise ValueError("Supply only one of `sampling_fraction` and `num_samples`.")
-        return self.run_indices(executor, self._sample_indices(num_samples, rng))
+        return self.run_index(executor, self._sample_indices(num_samples, rng))
 
     def slice(self, slices: Sequence[slice | int] | slice | int) -> Landscape | float:
         slices = complete_slices(slices, self.num_params)
@@ -187,8 +182,8 @@ class Landscape:
         landscape.landscape = data
         return landscape
 
-    def ravel_multi_index(self, indices: Sequence[NDArray[np.int_]]) -> NDArray[np.int_]:
-        return np.ravel_multi_index(indices, self.param_resolutions)
+    def ravel_multi_index(self, index: Sequence[NDArray[np.int_]]) -> NDArray[np.int_]:
+        return np.ravel_multi_index(index, self.param_resolutions)
 
     def run_all(self, executor: BaseExecutor) -> NDArray[np.float_]:
         self.landscape = TensorLandscapeData(
@@ -196,35 +191,35 @@ class Landscape:
         )
         return self.landscape
 
-    def run_indices(
+    def run_index(
         self,
         executor: BaseExecutor,
-        param_indices: Sequence[Sequence[int]] | Sequence[int] | int,
+        param_index: Sequence[Sequence[int]] | Sequence[int] | int,
     ) -> NDArray[np.float_]:
-        if isinstance(param_indices, int):
-            param_indices = (param_indices,)
-        if isinstance(param_indices[0], int):
-            if len(param_indices) == self.num_params:
-                param_indices = (param_indices,)
+        if isinstance(param_index, int):
+            param_index = (param_index,)
+        if isinstance(param_index[0], int):
+            if len(param_index) == self.num_params:
+                param_index = (param_index,)
             else:
-                param_indices = tuple((i,) for i in param_indices)
+                param_index = tuple((i,) for i in param_index)
         params = np.asarray(
-            [axis[np.array(param_indices)[:, i]] for i, axis in enumerate(self.axes)]
+            [axis[np.array(param_index)[:, i]] for i, axis in enumerate(self.axes)]
         ).T
         result = self._run(executor, params, params.shape[0])
-        self._add_sampled_landscape(self.ravel_multi_index(param_indices.T), result)
+        self._add_sampled_landscape(self.ravel_multi_index(param_index.T), result)
         return result
 
-    def run_flatten_indices(
-        self, executor: BaseExecutor, param_indices: Sequence[int] | int
+    def run_flatten_index(
+        self, executor: BaseExecutor, param_index: Sequence[int] | int
     ) -> NDArray[np.float_]:
-        if isinstance(param_indices, int):
-            param_indices = (param_indices,)
-        return self.run_indices(executor, self.unravel_index(param_indices))
+        if isinstance(param_index, int):
+            param_index = (param_index,)
+        return self.run_index(executor, self.unravel_index(param_index))
 
-    def reconstruct(self, reconstructor: BaseReconstructor | None = None) -> NDArray[np.float_]:
+    def reconstruct(self, reconstructor: BaseReconstructor | None = None) -> LandscapeData:
         if reconstructor is None:
-            reconstructor = BPReconstructor()
+            reconstructor = CSReconstructor()
         self.landscape = reconstructor.run(self)
         return self.landscape
 
@@ -246,8 +241,8 @@ class Landscape:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         pickle.dump(self, open(filename, "wb"))
 
-    def unravel_index(self, indices: Sequence[int]) -> tuple[NDArray[np.int_], ...]:
-        return np.unravel_index(indices, self.param_resolutions)
+    def unravel_index(self, index: Sequence[int]) -> tuple[NDArray[np.int_], ...]:
+        return np.unravel_index(index, self.param_resolutions)
 
     def _add_sampled_landscape(
         self, sampled_indices: NDArray[np.int_], sampled_landscape: NDArray[np.float_]
