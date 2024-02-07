@@ -13,8 +13,8 @@ from .trace import Trace
 if TYPE_CHECKING:
     from ..execution.base_executor import BaseExecutor, CallbackType
 
-ObjectiveType: TypeAlias = Callable[[NDArray[np.float_]], float]
-JacobianType: TypeAlias = Callable[[NDArray[np.float_]], NDArray[np.float_]]
+ObjectiveType: TypeAlias = Callable[[NDArray[np.float64]], float]
+JacobianType: TypeAlias = Callable[[NDArray[np.float64]], NDArray[np.float64]]
 ConstraintsType: TypeAlias = Sequence[
     tuple[Literal["eq", "ineq"], ObjectiveType, JacobianType | None]
     | tuple[Literal["eq", "ineq"], ObjectiveType]
@@ -66,7 +66,7 @@ class BaseOptimizer(ABC):
         callback: CallbackType | None = None,
         **executor_kwargs,
     ) -> ObjectiveType:
-        def callback_wrapper(params: NDArray[np.float_], value: float, runtime: float) -> None:
+        def callback_wrapper(params: NDArray[np.float64], value: float, runtime: float) -> None:
             self.trace.append(params, value, runtime)
             if callback is not None:
                 if callback(params, value, runtime):
@@ -78,8 +78,8 @@ class BaseOptimizer(ABC):
     def _run(
         self,
         executor: BaseExecutor,
-        initial_point: NDArray[np.float_],
-        bounds: NDArray[np.float_] | None = None,
+        initial_point: NDArray[np.float64],
+        bounds: NDArray[np.float64] | None = None,
         jacobian: JacobianType | None = None,  # TODO: make jacobian part of executor
         constraints: ConstraintsType | None = None,
         callback: CallbackType | None = None,

@@ -43,10 +43,10 @@ class Landscape:
             param_bounds = [param_bounds] * self.num_params
         elif len(param_bounds) != self.num_params:
             raise ValueError("Dimensions of resolutions and bounds do not match")
-        self.param_bounds: NDArray[np.float_] = np.array(param_bounds)
-        self.param_grid: NDArray[np.float_] = self._gen_params()
+        self.param_bounds: NDArray[np.float64] = np.array(param_bounds)
+        self.param_grid: NDArray[np.float64] = self._gen_params()
         self.landscape: LandscapeData | None = None
-        self.sampled_landscape: NDArray[np.float_] | None = None
+        self.sampled_landscape: NDArray[np.float64] | None = None
         self.sampled_indices: NDArray[np.int_] | None = None
         self._interpolator: RegularGridInterpolator | None = None
 
@@ -54,7 +54,7 @@ class Landscape:
         return self.interpolator(params)[0]
 
     @cached_property
-    def axes(self) -> tuple[NDArray[np.float_], ...]:
+    def axes(self) -> tuple[NDArray[np.float64], ...]:
         return tuple(
             np.linspace(
                 self.param_bounds[i][0],
@@ -79,7 +79,7 @@ class Landscape:
         return 0 if self.sampled_indices is None else len(self.sampled_indices)
 
     @property
-    def optimal_params(self) -> NDArray[np.float_]:
+    def optimal_params(self) -> NDArray[np.float64]:
         return self.index_to_param(self.optimal_point_index)
 
     @property
@@ -123,7 +123,7 @@ class Landscape:
     def copy(self) -> Landscape:
         return deepcopy(self)
 
-    def index_to_param(self, index: Sequence[Sequence[np.int_]]) -> NDArray[np.float_]:
+    def index_to_param(self, index: Sequence[Sequence[np.int_]]) -> NDArray[np.float64]:
         return np.array([axis[i] for i, axis in zip(index, self.axes)])
 
     def interpolate(
@@ -155,7 +155,7 @@ class Landscape:
         sampling_fraction: float | None = None,
         num_samples: int | None = None,
         rng: np.random.Generator | int | None = None,
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         if sampling_fraction is None:
             if num_samples is None:
                 raise ValueError("Either `sampling_fraction` or `num_samples` is needed.")
@@ -185,7 +185,7 @@ class Landscape:
     def ravel_multi_index(self, index: Sequence[NDArray[np.int_]]) -> NDArray[np.int_]:
         return np.ravel_multi_index(index, self.param_resolutions)
 
-    def run_all(self, executor: BaseExecutor) -> NDArray[np.float_]:
+    def run_all(self, executor: BaseExecutor) -> NDArray[np.float64]:
         self.landscape = TensorLandscapeData(
             self._run(executor, self._gen_params(), self.size).reshape(self.param_resolutions)
         )
@@ -195,7 +195,7 @@ class Landscape:
         self,
         executor: BaseExecutor,
         param_index: Sequence[Sequence[int]] | Sequence[int] | int,
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         if isinstance(param_index, int):
             param_index = (param_index,)
         if isinstance(param_index[0], int):
@@ -212,7 +212,7 @@ class Landscape:
 
     def run_flatten_index(
         self, executor: BaseExecutor, param_index: Sequence[int] | int
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         if isinstance(param_index, int):
             param_index = (param_index,)
         return self.run_index(executor, self.unravel_index(param_index))
@@ -245,7 +245,7 @@ class Landscape:
         return np.unravel_index(index, self.param_resolutions)
 
     def _add_sampled_landscape(
-        self, sampled_indices: NDArray[np.int_], sampled_landscape: NDArray[np.float_]
+        self, sampled_indices: NDArray[np.int_], sampled_landscape: NDArray[np.float64]
     ) -> None:
         if self.sampled_indices is not None:
             sampled_indices = np.concatenate((sampled_indices, self.sampled_indices))
@@ -260,7 +260,7 @@ class Landscape:
 
     def _run(
         self, executor: BaseExecutor, params_list: Iterable[Sequence[float]], count: int
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         return np.fromiter(executor.run_batch(params_list), float, count)
 
     def _sample_indices(

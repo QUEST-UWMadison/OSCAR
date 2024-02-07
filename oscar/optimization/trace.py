@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 
 class Trace:
     def __init__(self, optimization_type: Literal["min", "max"] = "min") -> None:
-        self.params_trace: list[NDArray[np.float_]] = []
+        self.params_trace: list[NDArray[np.float64]] = []
         self.value_trace: list[float] = []
         self.time_trace: list[float] = []
         self.optimization_type: Literal["min", "max"] = optimization_type
@@ -20,7 +20,7 @@ class Trace:
         return len(self.value_trace)
 
     @property
-    def optimal_params(self) -> NDArray[np.float_]:  # Known limitation: may violate constraints
+    def optimal_params(self) -> NDArray[np.float64]:  # Known limitation: may violate constraints
         argopt = np.argmin if self.optimization_type == "min" else np.argmax
         return self.params_trace[argopt(self.value_trace)]
 

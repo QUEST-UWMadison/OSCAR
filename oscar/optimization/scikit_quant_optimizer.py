@@ -30,8 +30,8 @@ try:
         def _run(
             self,
             executor: BaseExecutor,
-            initial_point: NDArray[np.float_],
-            bounds: NDArray[np.float_] | None = None,
+            initial_point: NDArray[np.float64],
+            bounds: NDArray[np.float64] | None = None,
             jacobian: JacobianType | None = None,
             constraints: ConstraintsType | None = None,
             callback: CallbackType | None = None,

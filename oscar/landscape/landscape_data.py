@@ -12,8 +12,8 @@ from .utils import complete_slices
 
 
 class LandscapeData:
-    def __init__(self, data: NDArray[np.float_] | Sequence[NDArray[np.float_]]) -> None:
-        self.data: NDArray[np.float_] | tuple[NDArray[np.float_], ...] = data
+    def __init__(self, data: NDArray[np.float64] | Sequence[NDArray[np.float64]]) -> None:
+        self.data: NDArray[np.float64] | tuple[NDArray[np.float64], ...] = data
 
     @property
     @abstractmethod
@@ -49,18 +49,18 @@ class LandscapeData:
         pass
 
     @abstractmethod
-    def to_numpy(self) -> NDArray[np.float_]:
+    def to_numpy(self) -> NDArray[np.float64]:
         pass
 
     def __getitem__(self, key: Sequence[slice | int] | slice | int) -> LandscapeData:
         return self.slice(key)
 
-    def __array__(self) -> NDArray[np.float_]:
+    def __array__(self) -> NDArray[np.float64]:
         return self.to_numpy()
 
 
 class TensorLandscapeData(LandscapeData):
-    def __init__(self, data: NDArray[np.float_]) -> None:
+    def __init__(self, data: NDArray[np.float64]) -> None:
         super().__init__(data)
 
     @property
@@ -91,16 +91,16 @@ class TensorLandscapeData(LandscapeData):
     def to_tensor_network(self) -> TensorNetworkLandscapeData:
         raise NotImplementedError()
 
-    def to_numpy(self) -> NDArray[np.float_]:
+    def to_numpy(self) -> NDArray[np.float64]:
         return self.data
 
 
 class TensorNetworkLandscapeData(LandscapeData):
-    def __init__(self, data: Sequence[NDArray[np.float_]]) -> None:
+    def __init__(self, data: Sequence[NDArray[np.float64]]) -> None:
         super().__init__(tuple(data))
 
     @property
-    def active_tensors(self) -> tuple[NDArray[np.float_], ...]:
+    def active_tensors(self) -> tuple[NDArray[np.float64], ...]:
         return tuple(tsr for tsr in self.data if tsr.ndim == 3)
 
     @property
@@ -108,7 +108,7 @@ class TensorNetworkLandscapeData(LandscapeData):
         return tuple(tsr.shape[1] for tsr in self.active_tensors)
 
     @property
-    def _pseudo_indices_view(self) -> NDArray[np.float_]:
+    def _pseudo_indices_view(self) -> NDArray[np.float64]:
         return [tsr[:, None, :] if tsr.ndim == 2 else tsr for tsr in self.data]
 
     def min(self, num_candidates: int | None = None) -> float:
@@ -154,5 +154,5 @@ class TensorNetworkLandscapeData(LandscapeData):
     def to_tensor_network(self) -> TensorNetworkLandscapeData:
         return self
 
-    def to_numpy(self) -> NDArray[np.float_]:
+    def to_numpy(self) -> NDArray[np.float64]:
         return teneva.full(self._pseudo_indices_view).reshape(self.shape)

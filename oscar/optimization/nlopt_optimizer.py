@@ -60,7 +60,7 @@ class NLoptOptimizer(BaseOptimizer):
         function: ObjectiveType,
         jacobian: JacobianType | None = None,
     ) -> ObjectiveType:
-        def objective(params: NDArray[np.float_], gradient: NDArray[np.float_]) -> float:
+        def objective(params: NDArray[np.float64], gradient: NDArray[np.float64]) -> float:
             if jacobian is not None:
                 if gradient.size > 0:
                     gradient[:] = jacobian(params)
@@ -75,8 +75,8 @@ class NLoptOptimizer(BaseOptimizer):
     def _run(
         self,
         executor: BaseExecutor,
-        initial_point: NDArray[np.float_],
-        bounds: NDArray[np.float_] | None = None,
+        initial_point: NDArray[np.float64],
+        bounds: NDArray[np.float64] | None = None,
         jacobian: JacobianType | None = None,
         constraints: ConstraintsType | None = None,
         callback: CallbackType | None = None,

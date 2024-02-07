@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 
 from ..optimization import Trace
 
-CallbackType: TypeAlias = Callable[[NDArray[np.float_], float, float], bool | None]
+CallbackType: TypeAlias = Callable[[NDArray[np.float64], float, float], bool | None]
 
 class BaseExecutor(ABC):
     @abstractmethod
@@ -35,7 +35,7 @@ class BaseExecutor(ABC):
     def run_batch(
         self,
         params_list: Iterable[Sequence[float]],
-        callback: Callable[[NDArray[np.float_], float, float], bool | None] | None = None,
+        callback: Callable[[NDArray[np.float64], float, float], bool | None] | None = None,
         **kwargs,
     ) -> Generator[float, None, None]:
         for params in params_list:
@@ -44,14 +44,14 @@ class BaseExecutor(ABC):
     def run_with_trace(
         self,
         trace: Trace,
-        callback: Callable[[NDArray[np.float_], float, float], None] | None = None,
+        callback: Callable[[NDArray[np.float64], float, float], None] | None = None,
         **kwargs,
     ) -> Trace:
         new_trace = Trace()
         new_trace.params_trace = deepcopy(trace.params_trace)
         time_trace = []
 
-        def append_time(params: NDArray[np.float_], value: float, runtime: float) -> None:
+        def append_time(params: NDArray[np.float64], value: float, runtime: float) -> None:
             time_trace.append(runtime)
             if callback is not None:
                 callback(params, value, runtime)

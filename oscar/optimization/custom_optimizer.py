@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 class CustomOptimizer(BaseOptimizer):
     def __init__(
-        self, optimizer: Callable[[NDArray[np.float_]], Any], name: str | None = None
+        self, optimizer: Callable[[NDArray[np.float64]], Any], name: str | None = None
     ) -> None:
-        self.optimizer: Callable[[NDArray[np.float_]], Any] = optimizer
+        self.optimizer: Callable[[NDArray[np.float64]], Any] = optimizer
         if name is None:
             name = self.optimizer.__name__
         self._name: str = name
@@ -28,8 +28,8 @@ class CustomOptimizer(BaseOptimizer):
     def _run(
         self,
         executor: BaseExecutor,
-        initial_point: NDArray[np.float_],
-        bounds: NDArray[np.float_] | None = None,
+        initial_point: NDArray[np.float64],
+        bounds: NDArray[np.float64] | None = None,
         jacobian: JacobianType | None = None,
         constraints: ConstraintsType | None = None,
         callback: CallbackType | None = None,
