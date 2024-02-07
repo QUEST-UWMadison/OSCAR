@@ -4,9 +4,14 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Iterable, Sequence
 from copy import deepcopy
 from time import time
+from typing import TypeAlias
+
+import numpy as np
+from numpy.typing import NDArray
 
 from ..optimization import Trace
 
+CallbackType: TypeAlias = Callable[[NDArray[np.float_], float, float], bool | None]
 
 class BaseExecutor(ABC):
     @abstractmethod
@@ -16,20 +21,21 @@ class BaseExecutor(ABC):
     def run(
         self,
         params: Sequence[float],
-        callback: Callable[[Sequence[float], float, float], None] | None = None,
+        callback: CallbackType | None = None,
         **kwargs,
     ) -> float:
         start_time = time()
         value = self._run(params, **kwargs)
         runtime = time() - start_time
         if callback is not None:
-            callback(params, value, runtime)
+            if callback(params, value, runtime):
+                raise KeyboardInterrupt
         return value
 
     def run_batch(
         self,
         params_list: Iterable[Sequence[float]],
-        callback: Callable[[Sequence[float], float, float], None] | None = None,
+        callback: Callable[[NDArray[np.float_], float, float], bool | None] | None = None,
         **kwargs,
     ) -> Generator[float, None, None]:
         for params in params_list:
@@ -38,14 +44,14 @@ class BaseExecutor(ABC):
     def run_with_trace(
         self,
         trace: Trace,
-        callback: Callable[[Sequence[float], float, float], None] | None = None,
+        callback: Callable[[NDArray[np.float_], float, float], None] | None = None,
         **kwargs,
     ) -> Trace:
         new_trace = Trace()
         new_trace.params_trace = deepcopy(trace.params_trace)
         time_trace = []
 
-        def append_time(params: Sequence[float], value: float, runtime: float) -> None:
+        def append_time(params: NDArray[np.float_], value: float, runtime: float) -> None:
             time_trace.append(runtime)
             if callback is not None:
                 callback(params, value, runtime)
