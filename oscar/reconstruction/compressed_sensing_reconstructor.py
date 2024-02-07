@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ast import Not
-from collections.abc import Sequence
+import warnings
+from collections.abc import Callable, Sequence
 from functools import partial, reduce, singledispatchmethod
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal
@@ -25,25 +25,29 @@ class CSReconstructor(BaseReconstructor):
     def __init__(
         self,
         regularization: float | None = 0.001,
-        tolerance: float = 1e-6,
+        tolerance: float = 1.0e-6,
         norm: int | Literal["fro", "inf", "nuc", "tv"] = 1,
         reverse_objectives: bool = False,
         solver: str | BaseOptimizer | None = None,
-        **solver_kwargs,
     ) -> None:
         self.regularization: float = regularization
         self.tolerance: float = tolerance
         self.norm: int | Literal["fro", "inf", "nuc", "tv"] = norm
         self.reverse_objectives: bool = reverse_objectives
         self.solver: str | BaseOptimizer | None = solver
-        self.solver_kwargs: dict[str, Any] = solver_kwargs
         self.result: cp.Problem | Trace | None = None
 
     @property
     def backend(self) -> ModuleType:
         return np if isinstance(self.solver, BaseOptimizer) else cp
 
-    def run(self, landscape: Landscape) -> NDArray[np.float_]:
+    def run(
+        self,
+        landscape: Landscape,
+        verbose: bool = False,
+        callback: Callable[[Any], None] | None = None,
+        **solver_kwargs,
+    ) -> NDArray[np.float_]:
         sampled_landscape = landscape.sampled_landscape
         if sampled_landscape is None:
             raise RuntimeError(
@@ -59,10 +63,8 @@ class CSReconstructor(BaseReconstructor):
             objective_jacobian, constraint_jacobian = constraint_jacobian, objective_jacobian
 
         if isinstance(self.solver, BaseOptimizer):
-            if self.regularization is None:
-                raise NotImplementedError("Constrained optimization is not supported yet.")
             if landscape.landscape is None:
-                x = np.random.default_rng().normal(scale=1e-6, size=landscape.size)
+                x = np.random.default_rng().normal(scale=1.0e-6, size=landscape.size)
                 x[sampled_indices] = sampled_landscape
             else:
                 x = landscape.landscape.to_numpy()
@@ -79,27 +81,49 @@ class CSReconstructor(BaseReconstructor):
                 executor,
                 initial_point=x,
                 jacobian=partial(
-                    self.objective_jacobian,
+                    objective_jacobian,
                     b=sampled_landscape,
                     sampled_indices=sampled_indices,
                     shape=shape,
                 ),
-                **self.solver_kwargs,
+                constraints=(
+                    [
+                        (
+                            "ineq",
+                            partial(
+                                constraint,
+                                b=sampled_landscape,
+                                sampled_indices=sampled_indices,
+                                shape=shape,
+                            ),
+                            partial(
+                                constraint_jacobian,
+                                b=sampled_landscape,
+                                sampled_indices=sampled_indices,
+                                shape=shape,
+                            ),
+                        )
+                    ]
+                    if self.regularization is None
+                    else None
+                ),
+                callback=callback,
+                **solver_kwargs,
             )[0]
             x = self.result.optimal_params
         else:
+            if callback is not None:
+                warnings.warn("The `callback` argument is ignored for the cvxpy backend.")
             x = cp.Variable(landscape.size)
             self.result = cp.Problem(
                 cp.Minimize(objective(x, sampled_landscape, sampled_indices, shape)),
                 (
                     None
                     if self.regularization
-                    else [
-                        constraint(x, sampled_landscape, sampled_indices, shape) <= self.tolerance
-                    ]
+                    else [constraint(x, sampled_landscape, sampled_indices, shape) >= 0]
                 ),
             )
-            self.result.solve(self.solver, **self.solver_kwargs)
+            self.result.solve(self.solver, verbose=verbose, **solver_kwargs)
             x = x.value
         return TensorLandscapeData(self._project_to_basis(x.reshape(shape)))
 
@@ -113,7 +137,11 @@ class CSReconstructor(BaseReconstructor):
         objective = self._norm(x.reshape(shape))
         if self.regularization is None:
             return objective
-        return self.regularization * objective + self.constraint(x, b, sampled_indices, shape)
+        return (
+            self.regularization * objective
+            - self.constraint(x, b, sampled_indices, shape)
+            + self.tolerance
+        )
 
     def constraint(
         self,
@@ -122,7 +150,7 @@ class CSReconstructor(BaseReconstructor):
         sampled_indices: NDArray[np.int_],
         shape: Sequence[int],
     ) -> float | cp.Expression:
-        return (
+        return self.tolerance - (
             self._l2_norm(
                 self._project_to_basis(x.reshape(shape)).reshape(-1)[sampled_indices] - b
             )
@@ -137,13 +165,13 @@ class CSReconstructor(BaseReconstructor):
         shape: Sequence[int],
     ) -> NDArray[np.float_]:
         if self.norm != 1:
-            raise NotImplementedError(
-                "Jacobian is not implemented for norms other than 1."
-            )
+            raise NotImplementedError("Jacobian is not implemented for norms other than 1.")
         objective = np.sign(x)
         if self.regularization is None:
             return objective
-        return self.regularization * objective + self.constraint_jacobian(x, b, sampled_indices, shape)
+        return self.regularization * objective - self.constraint_jacobian(
+            x, b, sampled_indices, shape
+        )
 
     def constraint_jacobian(
         self,
@@ -156,7 +184,7 @@ class CSReconstructor(BaseReconstructor):
         diff[sampled_indices] = (
             self._project_to_basis(x.reshape(shape)).reshape(-1)[sampled_indices] - b
         )
-        return 2 * self._project_to_basis(diff.reshape(shape), inverse=False).reshape(-1)
+        return -2 * self._project_to_basis(diff.reshape(shape), inverse=False).reshape(-1)
 
     @singledispatchmethod
     def _norm(self, x: NDArray[np.float_]) -> float:
