@@ -1,25 +1,25 @@
 from __future__ import annotations
 
-from typing import Any
-
 try:
-    from collections.abc import Sequence
-    from functools import partial
-    from typing import TYPE_CHECKING, Literal
+    import warnings
+    from typing import TYPE_CHECKING, Any, Literal
 
     import numpy as np
-    from skquant.opt import minimize
-    from SQCommon import Result
+    from numpy.typing import NDArray
+    from skquant.opt import minimize  # type: ignore
 
-    from .base_optimizer import BaseOptimizer
-    from .trace import Trace
+    from .base_optimizer import BaseOptimizer, ConstraintsType, JacobianType
 
     if TYPE_CHECKING:
-        from ..execution.base_executor import BaseExecutor
+        from ..execution.base_executor import BaseExecutor, CallbackType
 
     class ScikitQuantOptimizer(BaseOptimizer):
-        def __init__(self, method: Literal["imfil", "bobyqa", "snobfit", "nomad"]) -> None:
+        def __init__(
+            self, method: Literal["imfil", "bobyqa", "snobfit", "nomad"], budget: int
+        ) -> None:
             self.method: Literal["imfil", "bobyqa", "snobfit", "nomad"] = method
+            self.budget: int = budget
+            super().__init__()
 
         def name(self, include_library_name: bool = True) -> str:
             name: str = self.method
@@ -27,28 +27,29 @@ try:
                 name += " (Scikit-Quant)"
             return name
 
-        def run(
+        def _run(
             self,
             executor: BaseExecutor,
-            initial_point: Sequence[float],
+            initial_point: NDArray[np.float_],
+            bounds: NDArray[np.float_] | None = None,
+            jacobian: JacobianType | None = None,
+            constraints: ConstraintsType | None = None,
+            callback: CallbackType | None = None,
             executor_kwargs: dict[str, Any] | None = None,
-            bounds: Sequence[Sequence[float]] | None = None,  # TODO nomad
-            budget: int = 10000,
             **kwargs,
-        ) -> tuple[Trace, Result]:
-            if executor_kwargs is None:
-                executor_kwargs = {}
-            trace = Trace()
-            result = minimize(
-                func=partial(executor.run, callback=trace.append, **executor_kwargs),
-                x0=np.array(initial_point),
+        ) -> None:
+            if jacobian is not None:
+                warnings.warn("Jacobian is ignored for Scikit-Quant methods.")
+            if constraints is not None:
+                warnings.warn("Constraints are ignored for Scikit-Quant methods.")
+            self.result = minimize(
+                func=self._objective(executor, callback, **executor_kwargs),
+                x0=initial_point,
                 bounds=None if bounds is None else np.array(bounds),
-                budget=budget,
+                budget=self.budget,
                 method=self.method,
                 **kwargs,
             )
-            trace.update_with_skquant_result(result)
-            return trace, result
 
 except ImportError:
     pass
