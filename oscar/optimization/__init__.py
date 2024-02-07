@@ -9,6 +9,7 @@ from .hyperparameter_tuner import (
 )
 from .nlopt_optimizer import NLoptOptimizer
 from .qiskit_optimizer import QiskitOptimizer
+from .scipy_optimizer import SciPyOptimizer
 from .trace import Trace
 
 try:

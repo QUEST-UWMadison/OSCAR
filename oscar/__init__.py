@@ -9,6 +9,7 @@ from .optimization import (
     HyperparameterTuner,
     NLoptOptimizer,
     QiskitOptimizer,
+    SciPyOptimizer,
     Trace,
     result_metrics,
 )
