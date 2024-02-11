@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -12,5 +13,7 @@ if TYPE_CHECKING:
 
 class BaseReconstructor(ABC):
     @abstractmethod
-    def run(self, landscape: Landscape) -> NDArray[np.float64]:
+    def run(
+        self, landscape: Landscape, verbose: bool = False, callback: Callable | None = None
+    ) -> NDArray[np.float64]:
         pass

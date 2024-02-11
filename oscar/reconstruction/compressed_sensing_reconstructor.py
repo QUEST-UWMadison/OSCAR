@@ -47,7 +47,7 @@ class CSReconstructor(BaseReconstructor):
         verbose: bool = False,
         callback: Callable[[Any], None] | None = None,
         **solver_kwargs,
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         sampled_landscape = landscape.sampled_landscape
         if sampled_landscape is None:
             raise RuntimeError(
@@ -129,8 +129,8 @@ class CSReconstructor(BaseReconstructor):
 
     def objective(
         self,
-        x: NDArray[np.float_] | cp.Expression,
-        b: NDArray[np.float_],
+        x: NDArray[np.float64] | cp.Expression,
+        b: NDArray[np.float64],
         sampled_indices: NDArray[np.int_],
         shape: Sequence[int],
     ) -> cp.Expression | float:
@@ -145,8 +145,8 @@ class CSReconstructor(BaseReconstructor):
 
     def constraint(
         self,
-        x: NDArray[np.float_] | cp.Expression,
-        b: NDArray[np.float_],
+        x: NDArray[np.float64] | cp.Expression,
+        b: NDArray[np.float64],
         sampled_indices: NDArray[np.int_],
         shape: Sequence[int],
     ) -> float | cp.Expression:
@@ -159,11 +159,11 @@ class CSReconstructor(BaseReconstructor):
 
     def objective_jacobian(
         self,
-        x: NDArray[np.float_],
-        b: NDArray[np.float_],
+        x: NDArray[np.float64],
+        b: NDArray[np.float64],
         sampled_indices: NDArray[np.int_],
         shape: Sequence[int],
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         if self.norm != 1:
             raise NotImplementedError("Jacobian is not implemented for norms other than 1.")
         objective = np.sign(x)
@@ -175,11 +175,11 @@ class CSReconstructor(BaseReconstructor):
 
     def constraint_jacobian(
         self,
-        x: NDArray[np.float_],
-        b: NDArray[np.float_],
+        x: NDArray[np.float64],
+        b: NDArray[np.float64],
         sampled_indices: NDArray[np.int_],
         shape: Sequence[int],
-    ) -> NDArray[np.float_]:
+    ) -> NDArray[np.float64]:
         diff = np.zeros_like(x)
         diff[sampled_indices] = (
             self._project_to_basis(x.reshape(shape)).reshape(-1)[sampled_indices] - b
@@ -187,7 +187,7 @@ class CSReconstructor(BaseReconstructor):
         return -2 * self._project_to_basis(diff.reshape(shape), inverse=False).reshape(-1)
 
     @singledispatchmethod
-    def _norm(self, x: NDArray[np.float_]) -> float:
+    def _norm(self, x: NDArray[np.float64]) -> float:
         if self.norm == "tv":
             return np.sum(np.abs([np.diff(x, axis=i) for i in range(x.ndim)]))
         return np.linalg.norm(x.reshape(-1), ord=self.norm)
@@ -199,7 +199,7 @@ class CSReconstructor(BaseReconstructor):
         return cp.norm(x.reshape(-1), p=self.norm)
 
     @singledispatchmethod
-    def _l2_norm(self, x: NDArray[np.float_]) -> float:
+    def _l2_norm(self, x: NDArray[np.float64]) -> float:
         return np.linalg.norm(x, 2)
 
     @_l2_norm.register
@@ -207,7 +207,7 @@ class CSReconstructor(BaseReconstructor):
         return cp.norm(x, 2)
 
     @singledispatchmethod
-    def _project_to_basis(self, x: NDArray[np.float_], inverse: bool = True) -> NDArray[np.float_]:
+    def _project_to_basis(self, x: NDArray[np.float64], inverse: bool = True) -> NDArray[np.float64]:
         project = idct if inverse else dct
         for i in range(len(x.shape)):
             x = project(x, norm="ortho", axis=i)

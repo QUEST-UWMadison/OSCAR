@@ -4,7 +4,7 @@ import math
 import os
 import pickle
 import warnings
-from collections.abc import Generator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from copy import deepcopy
 from functools import cached_property
 from itertools import product
@@ -217,10 +217,15 @@ class Landscape:
             param_index = (param_index,)
         return self.run_index(executor, self.unravel_index(param_index))
 
-    def reconstruct(self, reconstructor: BaseReconstructor | None = None) -> LandscapeData:
+    def reconstruct(
+        self,
+        reconstructor: BaseReconstructor | None = None,
+        verbose: bool = False,
+        callback: Callable | None = None,
+    ) -> LandscapeData:
         if reconstructor is None:
             reconstructor = CSReconstructor()
-        self.landscape = reconstructor.run(self)
+        self.landscape = reconstructor.run(self, verbose, callback)
         return self.landscape
 
     def to_dense(self) -> Landscape:
