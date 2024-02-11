@@ -46,8 +46,6 @@ class Trace:
         axes = list(axes)
         trace = copy(self)
         trace.params_trace = [params[axes] for params in trace.params_trace]
-        if trace.optimal_params is not None:
-            trace.optimal_params = trace.optimal_params[axes]
         return trace
 
     def __getitem__(self, axes: int | Sequence[int]) -> Trace:
