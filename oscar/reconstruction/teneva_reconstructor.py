@@ -69,8 +69,8 @@ class TenevaReconstructor(BaseReconstructor):
         shuffle = rng.permutation(landscape.num_samples)
         data_train = landscape.sampled_landscape[shuffle]
         indices_train = sampled_indices[shuffle]
-        if self.validation_fraction > 0:
-            split = int(landscape.num_samples * self.validation_fraction)
+        split = int(landscape.num_samples * self.validation_fraction)
+        if split > 0:
             data_valid = data_train[:split]
             indices_valid = indices_train[:split]
             data_train = data_train[split:]
@@ -78,20 +78,21 @@ class TenevaReconstructor(BaseReconstructor):
         else:
             data_valid = None
             indices_valid = None
-        tensors = teneva.als(
-            indices_train,
-            data_train,
-            tensors,
-            nswp=self.als_nsweeps,
-            e=self.als_convergence,
-            info=self.result,
-            I_vld=indices_valid,
-            y_vld=data_valid,
-            e_vld=self.validation_convergence,
-            r=self.als_max_rank,
-            lamb=self.als_regularization,
-            w=self.als_weights,
-            cb=callback,
-            log=verbose,
-        )
+        if self.als_nsweeps > 0:
+            tensors = teneva.als(
+                indices_train,
+                data_train,
+                tensors,
+                nswp=self.als_nsweeps,
+                e=self.als_convergence,
+                info=self.result,
+                I_vld=indices_valid,
+                y_vld=data_valid,
+                e_vld=self.validation_convergence,
+                r=self.als_max_rank,
+                lamb=self.als_regularization,
+                w=self.als_weights,
+                cb=callback,
+                log=verbose,
+            )
         return TensorNetworkLandscapeData(tensors)
