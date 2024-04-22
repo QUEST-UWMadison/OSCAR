@@ -44,7 +44,6 @@ class Landscape:
         elif len(param_bounds) != self.num_params:
             raise ValueError("Dimensions of resolutions and bounds do not match")
         self.param_bounds: NDArray[np.float64] = np.array(param_bounds)
-        self.param_grid: NDArray[np.float64] = self._gen_params()
         self.landscape: LandscapeData | None = None
         self.sampled_landscape: NDArray[np.float64] | None = None
         self.sampled_indices: NDArray[np.int_] | None = None
@@ -130,7 +129,7 @@ class Landscape:
         self,
         method: Literal["linear", "nearest", "slinear", "cubic", "quintic", "pchip"] = "slinear",
         bounds_error: bool = False,
-        fill_value: float | None = None,
+        fill_value: float = np.nan,
     ) -> RegularGridInterpolator:
         self._interpolator = RegularGridInterpolator(
             self.axes,
@@ -151,7 +150,7 @@ class Landscape:
 
     def sample_and_run(
         self,
-        executor: BaseExecutor,
+        executor: BaseExecutor | Landscape,
         sampling_fraction: float | None = None,
         num_samples: int | None = None,
         rng: np.random.Generator | int | None = None,
@@ -193,7 +192,7 @@ class Landscape:
 
     def run_index(
         self,
-        executor: BaseExecutor,
+        executor: BaseExecutor | Landscape,
         param_index: Sequence[Sequence[int]] | Sequence[int] | int,
     ) -> NDArray[np.float64]:
         if isinstance(param_index, int):
@@ -203,15 +202,22 @@ class Landscape:
                 param_index = (param_index,)
             else:
                 param_index = tuple((i,) for i in param_index)
-        params = np.asarray(
-            [axis[np.array(param_index)[:, i]] for i, axis in enumerate(self.axes)]
-        ).T
-        result = self._run(executor, params, params.shape[0])
+        if isinstance(executor, Landscape):
+            if not np.allclose(executor.param_resolutions, self.param_resolutions):
+                raise ValueError("Current landscape and source landscape have different resolutions.")
+            if not np.allclose(executor.param_bounds, self.param_bounds):
+                warnings.warn("Current landscape and source landscape have different parameter bounds.")
+            result = np.asarray([executor.slice(idx) for idx in param_index])
+        else:
+            params = np.asarray(
+                [axis[np.array(param_index)[:, i]] for i, axis in enumerate(self.axes)]
+            ).T
+            result = self._run(executor, params, params.shape[0])
         self._add_sampled_landscape(self.ravel_multi_index(param_index.T), result)
         return result
 
     def run_flatten_index(
-        self, executor: BaseExecutor, param_index: Sequence[int] | int
+        self, executor: BaseExecutor | Landscape, param_index: Sequence[int] | int
     ) -> NDArray[np.float64]:
         if isinstance(param_index, int):
             param_index = (param_index,)
@@ -266,7 +272,7 @@ class Landscape:
     def _run(
         self, executor: BaseExecutor, params_list: Iterable[Sequence[float]], count: int
     ) -> NDArray[np.float64]:
-        return np.fromiter(executor.run_batch(params_list), float, count)
+        return np.fromiter(executor.run_batch(params_list), float, count) # TODO: dtype
 
     def _sample_indices(
         self, num_samples: int, rng: np.random.Generator | int | None = None
