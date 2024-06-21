@@ -39,11 +39,8 @@ class BaseOptimizer(ABC):
         jacobian: JacobianType | None = None,
         constraints: ConstraintsType | None = None,
         callback: CallbackType | None = None,
-        executor_kwargs: dict[str, Any] | None = None,
-        **kwargs,
+        **executor_kwargs,
     ) -> tuple[Trace, Any]:
-        if executor_kwargs is None:
-            executor_kwargs = {}
         self.trace = Trace()
         try:
             self._run(
@@ -53,8 +50,7 @@ class BaseOptimizer(ABC):
                 jacobian,
                 constraints,
                 callback,
-                executor_kwargs,
-                **kwargs,
+                **executor_kwargs,
             )
         except KeyboardInterrupt:
             pass
@@ -83,7 +79,6 @@ class BaseOptimizer(ABC):
         jacobian: JacobianType | None = None,  # TODO: make jacobian part of executor
         constraints: ConstraintsType | None = None,
         callback: CallbackType | None = None,
-        executor_kwargs: dict[str, Any] | None = None,
-        **kwargs,
+        **executor_kwargs,
     ) -> None:
         pass

@@ -16,15 +16,12 @@ if TYPE_CHECKING:
 
 
 class QiskitOptimizer(BaseOptimizer):
-    @singledispatchmethod
-    def __init__(self, optimizer: Optimizer, **configs) -> None:
-        optimizer.set_options(**configs)
-        self.optimizer: Optimizer = optimizer
-        super().__init__()
-
-    @__init__.register
-    def _(self, optimizer: str, **configs) -> None:
-        self.optimizer = getattr(optimizers, optimizer)(**configs)
+    def __init__(self, optimizer: str | Optimizer, **configs) -> None:
+        if isinstance(optimizer, str):
+            self.optimizer: Optimizer = getattr(optimizers, optimizer)()
+        else:
+            self.optimizer: Optimizer = optimizer
+        self.optimizer.set_options(**configs)
         super().__init__()
 
     def name(self, include_library_name: bool = True) -> str:
@@ -41,12 +38,10 @@ class QiskitOptimizer(BaseOptimizer):
         jacobian: JacobianType | None = None,
         constraints: ConstraintsType | None = None,
         callback: CallbackType | None = None,
-        executor_kwargs: dict[str, Any] | None = None,
-        **kwargs,
+        **executor_kwargs,
     ) -> None:
         if constraints is not None:
             warnings.warn("Constraints are ignored for Qiskit methods.")
-        self.optimizer.set_options(**kwargs)
         self.result = self.optimizer.minimize(
             self._objective(executor, callback, **executor_kwargs),
             initial_point,

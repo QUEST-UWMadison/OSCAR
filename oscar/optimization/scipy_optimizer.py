@@ -14,11 +14,12 @@ if TYPE_CHECKING:
 
 class SciPyOptimizer(BaseOptimizer):
     def __init__(
-        self, optimizer: str, tol: float | None = None, options: dict[str, Any] | None = None
+        self, optimizer: str, tol: float | None = None, options: dict[str, Any] | None = None, **optimizer_kwargs
     ) -> None:
         self.optimizer: str = optimizer
         self.tol: float | None = tol
         self.options: dict[str, Any] | None = options
+        self.optimizer_kwargs: dict[str, Any] = optimizer_kwargs
         super().__init__()
 
     def name(self, include_library_name: bool = True) -> str:
@@ -32,8 +33,7 @@ class SciPyOptimizer(BaseOptimizer):
         jacobian: JacobianType | None = None,
         constraints: ConstraintsType | None = None,
         callback: CallbackType | None = None,
-        executor_kwargs: dict[str, Any] | None = None,
-        **kwargs,
+        **executor_kwargs,
     ) -> None:
         self.result = minimize(
             self._objective(executor, callback, **executor_kwargs),
@@ -44,13 +44,13 @@ class SciPyOptimizer(BaseOptimizer):
             constraints=to_scipy_constraints(constraints),
             tol=self.tol,
             options=self.options,
-            **kwargs,
+            **self.optimizer_kwargs,
         )
 
 
 def to_scipy_constraints(constraints: ConstraintsType | None) -> list[dict[str, Any]] | None:
     if constraints is None:
-        return None
+        return ()
     constraints = list(constraints)
     for i, constraint in enumerate(constraints):
         if len(constraint) == 2:

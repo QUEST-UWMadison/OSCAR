@@ -36,7 +36,7 @@ try:
             executor: BaseExecutor,
             initial_point: NDArray[np.float64],
             bounds: NDArray[np.float64] | None = None,
-            jacobian: JacobianType | None = None,  # TODO: make jacobian part of executor
+            jacobian: JacobianType | None = None,
             constraints: ConstraintsType | None = None,
             callback: CallbackType | None = None,
             **executor_kwargs,

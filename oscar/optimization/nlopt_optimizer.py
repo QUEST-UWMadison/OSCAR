@@ -30,6 +30,7 @@ class NLoptOptimizer(BaseOptimizer):
         initial_step: Sequence[float] | float | None = None,
         population: int | None = None,
         vector_storage: int | None = None,
+        **optimizer_kwargs,
     ) -> None:
         self.optimizer: opt | str = optimizer
         self.stopval: float | None = stopval
@@ -44,6 +45,7 @@ class NLoptOptimizer(BaseOptimizer):
         self.initial_step: Sequence[float] | float | None = initial_step
         self.population: int | None = population
         self.vector_storage: int | None = vector_storage
+        self.optimizer_kwargs: dict[str, Any] = optimizer_kwargs
         super().__init__()
 
     def name(self, include_library_name: bool = True) -> str:
@@ -80,8 +82,7 @@ class NLoptOptimizer(BaseOptimizer):
         jacobian: JacobianType | None = None,
         constraints: ConstraintsType | None = None,
         callback: CallbackType | None = None,
-        executor_kwargs: dict[str, Any] | None = None,
-        **kwargs,
+        **executor_kwargs,
     ) -> None:
         if isinstance(self.optimizer, str):
             self.optimizer = opt(self.optimizer, len(initial_point))
@@ -126,7 +127,7 @@ class NLoptOptimizer(BaseOptimizer):
             self.optimizer.set_population(self.population)
         if self.vector_storage is not None:
             self.optimizer.set_vector_storage(self.vector_storage)
-        for key, valule in kwargs.items():
+        for key, valule in self.optimizer_kwargs.items():
             self.optimizer.set_param(key, valule)
 
         self.optimizer.set_min_objective(

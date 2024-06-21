@@ -15,14 +15,15 @@ try:
 
     class ScikitQuantOptimizer(BaseOptimizer):
         def __init__(
-            self, method: Literal["imfil", "bobyqa", "snobfit", "nomad"], budget: int
+            self, optimizer: Literal["imfil", "bobyqa", "snobfit", "nomad"], budget: int, **optimizer_kwargs
         ) -> None:
-            self.method: Literal["imfil", "bobyqa", "snobfit", "nomad"] = method
+            self.optimizer: Literal["imfil", "bobyqa", "snobfit", "nomad"] = optimizer
             self.budget: int = budget
+            self.optimizer_kwargs: dict[str, Any] = optimizer_kwargs
             super().__init__()
 
         def name(self, include_library_name: bool = True) -> str:
-            name: str = self.method
+            name: str = self.optimizer
             if include_library_name:
                 name += " (Scikit-Quant)"
             return name
@@ -35,8 +36,7 @@ try:
             jacobian: JacobianType | None = None,
             constraints: ConstraintsType | None = None,
             callback: CallbackType | None = None,
-            executor_kwargs: dict[str, Any] | None = None,
-            **kwargs,
+            **executor_kwargs,
         ) -> None:
             if jacobian is not None:
                 warnings.warn("Jacobian is ignored for Scikit-Quant methods.")
@@ -47,8 +47,8 @@ try:
                 x0=initial_point,
                 bounds=None if bounds is None else np.array(bounds),
                 budget=self.budget,
-                method=self.method,
-                **kwargs,
+                method=self.optimizer,
+                **self.optimizer_kwargs,
             )
 
 except ImportError:

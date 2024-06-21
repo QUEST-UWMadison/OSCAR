@@ -14,12 +14,13 @@ if TYPE_CHECKING:
 
 class CustomOptimizer(BaseOptimizer):
     def __init__(
-        self, optimizer: Callable[[NDArray[np.float64]], Any], name: str | None = None
+        self, optimizer: Callable[[NDArray[np.float64]], Any], name: str | None = None, **optimizer_kwargs
     ) -> None:
         self.optimizer: Callable[[NDArray[np.float64]], Any] = optimizer
         if name is None:
             name = self.optimizer.__name__
         self._name: str = name
+        self.optimizer_kwargs: dict[str, Any] = optimizer_kwargs
         super().__init__()
 
     def name(self, include_library_name: bool = True) -> str:
@@ -33,8 +34,7 @@ class CustomOptimizer(BaseOptimizer):
         jacobian: JacobianType | None = None,
         constraints: ConstraintsType | None = None,
         callback: CallbackType | None = None,
-        executor_kwargs: dict[str, Any] | None = None,
-        **kwargs,
+        **executor_kwargs,
     ) -> None:
         self.result = self.optimizer(
             self._objective(executor, callback, **executor_kwargs),
@@ -42,5 +42,5 @@ class CustomOptimizer(BaseOptimizer):
             bounds,
             jacobian,
             constraints,
-            **kwargs,
+            **self.optimizer_kwargs,
         )
