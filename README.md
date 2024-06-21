@@ -1,7 +1,7 @@
 # OSCAR: configure and debug variational quantum algorithms (VQAs) efficiently
 OSCAR leverages compressed sensing to reconstruct the landscape of variational quantum algorithms, using only a small fraction of all circuit executions needed for the entire landscape. In addition, by interpolating the discrete landscape, OSCAR can benchmark thousands of optimization configurations in an instant.
 
-This is a package accompanying the paper [Enabling High Performance Debugging for Variational Quantum Algorithms using Compressed Sensing](https://arxiv.org/abs/2308.03213). For our original research implementation and record, please refer to [https://github.com/kunliu7/oscar/](https://github.com/kunliu7/oscar/). This repo is a rewrite as a user-friendly package, and some of the methods have been substantially improved compared to the version used in the paper.
+This is a package accompanying the paper [Enabling High Performance Debugging for Variational Quantum Algorithms using Compressed Sensing](https://arxiv.org/abs/2308.03213) and [Variational Quantum Algorithm Landscape Reconstruction by Low-Rank Tensor Completion](https://arxiv.org/abs/2405.10941). For our original research implementation and record, please refer to [https://github.com/kunliu7/oscar/](https://github.com/kunliu7/oscar/). This repo is a rewrite as a user-friendly package, and some of the methods have been substantially improved compared to the version used in the paper.
 
 ## Install
 ```
@@ -15,7 +15,7 @@ __The following walkthrough is also available as a [Jupyter notebook](https://gi
 
 An "(energy) landscape" of a variational quantum algorithm (VQA) is the ensemble of objective function values over the parameter space, where each value is the expectation of measuring the problem Hamiltonian with the variational ansatz under the corresponding parameters. OSCAR exploits landscapes to provide VQA debugging features.
 
-In OSCAR, the `oscar.Landscape` class uses a discretized grid over parameters in given ranges ([#Landscape](#landscape)), where the grid values are calculated by an `oscar.BaseExecutor` ([#Executor](#executor)). To speed up this grid generation process, OSCAR provides the option to approximate the grid values using only a small fraction of samples ([#Reconstruction](#reconstruction)). Additionally, OSCAR can interpolate the grid points to provide a continuous function approximating the landscape for instant optimization runs ([#Interpolation](#interpolation)), thus enabling highly efficient [#Optimization configuration benchmarking](#optimization-configuration-benchmarking) for choosing optimizers, their hyperparameters, initialization strategies, and more.
+In OSCAR, the `oscar.Landscape` class uses a discretized grid over parameters in given ranges ([#Landscape](#landscape)), where the grid values are calculated by an `oscar.execution.BaseExecutor` ([#Executor](#executor)). To speed up this grid generation process, OSCAR provides the option to approximate the grid values using only a small fraction of samples ([#Reconstruction](#reconstruction)). Additionally, OSCAR can interpolate the grid points to provide a continuous function approximating the landscape for instant optimization runs ([#Interpolation](#interpolation)), thus enabling highly efficient [#Optimization configuration benchmarking](#optimization-configuration-benchmarking) for choosing optimizers, their hyperparameters, initialization strategies, and more.
 
 ### Landscape
 
@@ -106,7 +106,7 @@ Sample a few points on the grid and get their value using our previously defined
 _ = landscape.sample_and_run(qiskit_executor, sampling_fraction = 1 / 16, rng = 42)
 ```
 
-Reconstruct the full landscape with a desired `oscar.BaseReconstructor` and visualize the reconstructed landscape.
+Reconstruct the full landscape with a desired `oscar.reconstruction.BaseReconstructor` and visualize the reconstructed landscape.
 
 
 ```python
@@ -275,14 +275,15 @@ for config in configs:
 ## Roadmap
 - Docs and tests
 - Execution
-    - Executors for other backends, e.g. Cirq.
+    - Jacobian
+    - Autodiff
+- Interpolation
+    - Alternative interpolators
 - Landscape
-    - Better visualization, especially for higher dimensions
     - Execution-hardness-aware parameter sampling
     - Support for irregular grid (integrate with `HyperparameterTuner`)
 - Reconstruction
-    - Avoid explicitly constructing the inverse DCT operator (by adding `scipy.optimize` or `cvxopt` implementations)
-    - Other types of compressed sensing (e.g. total variation)
+    - Data point confidence
 - Optimization
-    - Directly interface scipy optimizers
     - Support the association of hyperparameters in tuner
+    - PCA on trace
