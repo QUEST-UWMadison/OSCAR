@@ -9,7 +9,7 @@ authors = [
 ]
 description = "OSCAR: configure and debug variational quantum algorithms efficiently"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 keywords = []
 license = {text = "MIT"}
 classifiers = [
