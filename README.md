@@ -1,7 +1,7 @@
 # OSCAR: configure and debug variational quantum algorithms (VQAs) efficiently
 OSCAR leverages compressed sensing to reconstruct the landscape of variational quantum algorithms, using only a small fraction of all circuit executions needed for the entire landscape. In addition, by interpolating the discrete landscape, OSCAR can benchmark thousands of optimization configurations in an instant.
 
-This is a package accompanying the paper [Enabling High Performance Debugging for Variational Quantum Algorithms using Compressed Sensing](https://arxiv.org/abs/2308.03213). For our original research implementation and record, please refer to [https://github.com/kunliu7/oscar/](https://github.com/kunliu7/oscar/). This repo is a rewrite as a user-friendly package, and some of the methods have been substantially improved compared to the version used in the paper.
+This is a package accompanying the paper [Enabling High Performance Debugging for Variational Quantum Algorithms using Compressed Sensing](https://arxiv.org/abs/2308.03213) and [Variational Quantum Algorithm Landscape Reconstruction by Low-Rank Tensor Completion](https://arxiv.org/abs/2405.10941). For our original research implementation and record, please refer to [https://github.com/kunliu7/oscar/](https://github.com/kunliu7/oscar/). This repo is a rewrite as a user-friendly package, and some of the methods have been substantially improved compared to the version used in the paper.
 
 ## Install
 ```
@@ -15,7 +15,7 @@ __The following walkthrough is also available as a [Jupyter notebook](https://gi
 
 An "(energy) landscape" of a variational quantum algorithm (VQA) is the ensemble of objective function values over the parameter space, where each value is the expectation of measuring the problem Hamiltonian with the variational ansatz under the corresponding parameters. OSCAR exploits landscapes to provide VQA debugging features.
 
-In OSCAR, the `oscar.Landscape` class uses a discretized grid over parameters in given ranges ([#Landscape](#landscape)), where the grid values are calculated by an `oscar.BaseExecutor` ([#Executor](#executor)). To speed up this grid generation process, OSCAR provides the option to approximate the grid values using only a small fraction of samples ([#Reconstruction](#reconstruction)). Additionally, OSCAR can interpolate the grid points to provide a continuous function approximating the landscape for instant optimization runs ([#Interpolation](#interpolation)), thus enabling highly efficient [#Optimization configuration benchmarking](#optimization-configuration-benchmarking) for choosing optimizers, their hyperparameters, initialization strategies, and more.
+In OSCAR, the `oscar.Landscape` class uses a discretized grid over parameters in given ranges ([#Landscape](#landscape)), where the grid values are calculated by an `oscar.execution.BaseExecutor` ([#Executor](#executor)). To speed up this grid generation process, OSCAR provides the option to approximate the grid values using only a small fraction of samples ([#Reconstruction](#reconstruction)). Additionally, OSCAR can interpolate the grid points to provide a continuous function approximating the landscape for instant optimization runs ([#Interpolation](#interpolation)), thus enabling highly efficient [#Optimization configuration benchmarking](#optimization-configuration-benchmarking) for choosing optimizers, their hyperparameters, initialization strategies, and more.
 
 ### Landscape
 
@@ -118,7 +118,7 @@ Sample a few points on the grid and get their value using our previously defined
 _ = landscape.sample_and_run(qiskit_executor, sampling_fraction = 1 / 16, rng = 42)
 ```
 
-Reconstruct the full landscape with a desired `oscar.BaseReconstructor` and visualize the reconstructed landscape.
+Reconstruct the full landscape with a desired `oscar.reconstruction.BaseReconstructor` and visualize the reconstructed landscape.
 
 
 ```python
@@ -225,28 +225,25 @@ from oscar import HyperparameterTuner, HyperparameterGrid, result_metrics, Qiski
 x0_pool = [(0, 0.6), (0.4, 0.6), (0, 1.2), (-0.4, 1.2), (0.4, 1.2)]
 maxfev_pool = [10, 30, 50]
 initial_step_pool = [0.001, 0.01, 0.1]
-configs = [
+optimizer_configs = [
     HyperparameterGrid(
-        QiskitOptimizer("COBYLA"),
-        initial_point=x0_pool,
+        NLoptOptimizer,
+        optimizer=("LN_COBYLA", "LN_BOBYQA"),
         maxiter=maxfev_pool,
-        rhobeg=initial_step_pool,
-        bounds=[bounds],
-    ),
-    HyperparameterGrid(
-        NLoptOptimizer("LN_BOBYQA"),
-        initial_point=x0_pool,
-        maxeval=maxfev_pool,
         initial_step=initial_step_pool,
-        bounds=[bounds],
-        ftol_rel=[1e-14],
-    )
+        ftol_rel=[1e-12],
+    ),
 ]
+run_configs = HyperparameterGrid(
+        executor=[itpl_executor],
+        initial_point=x0_pool,
+        bounds=[bounds],
+    )
 
-tuner = HyperparameterTuner(configs)
-print(f"Running {sum(prod(config.shape) for config in configs)} optimizations...")
+tuner = HyperparameterTuner(optimizer_configs)
+print(f"Running {prod(prod(config.shape) for config in optimizer_configs + [run_configs])} optimizations...")
 start = time()
-tuner.run(itpl_executor)
+tuner.run(run_configs)
 print(f"...in {time() - start:.2f} seconds.")
 ```
 
@@ -260,40 +257,31 @@ Print out top optimizer configurations using the optimizer-reported optimal valu
 ```python
 import numpy as np
 
-result = tuner.process_results(result_metrics.optimal_value())
-for config in configs:
-    method = config.method
-    top_config_idices = np.argsort(result[method].flat)[:5]
-    print(f"Top configs for {method}:")
-    for energy, config_str in zip(result[method].flat[top_config_idices], config.interpret(top_config_idices)):
-        print(f"    Energy: {energy}  Config: {config_str}")
+result = tuner.process_results(result_metrics.optimal_value())[0]
+indices = np.argsort(result.flat)[:5:]
+top_configs = tuner.interpret(indices, run_configs=run_configs)
+for i, index in enumerate(indices):
+    print(f"Energy: {result.flat[index]}  Config: {top_configs[i]}")
 ```
 
-    Top 5 configs for COBYLA (Qiskit):
-        Energy: -2.723788946856275  Config: ['initial_point=(-0.4, 1.2)', 'maxiter=50', 'rhobeg=0.1']
-        Energy: -2.7228650989208063  Config: ['initial_point=(-0.4, 1.2)', 'maxiter=30', 'rhobeg=0.1']
-        Energy: -2.6946781072090586  Config: ['initial_point=(0, 0.6)', 'maxiter=50', 'rhobeg=0.01']
-        Energy: -2.6604398584596645  Config: ['initial_point=(0, 0.6)', 'maxiter=30', 'rhobeg=0.1']
-        Energy: -2.6604398584596645  Config: ['initial_point=(0, 0.6)', 'maxiter=50', 'rhobeg=0.1']
-    Top 5 configs for LN_BOBYQA (NLopt):
-        Energy: -2.724927280467881  Config: ['initial_point=(-0.4, 1.2)', 'maxeval=50', 'initial_step=0.1']
-        Energy: -2.7243859869268063  Config: ['initial_point=(-0.4, 1.2)', 'maxeval=30', 'initial_step=0.1']
-        Energy: -2.700379415460393  Config: ['initial_point=(0, 0.6)', 'maxeval=50', 'initial_step=0.1']
-        Energy: -2.699909779915257  Config: ['initial_point=(0, 0.6)', 'maxeval=30', 'initial_step=0.1']
-        Energy: -2.612410452806276  Config: ['initial_point=(0, 0.6)', 'maxeval=50', 'initial_step=0.001']
+Energy: -2.0152383123301854  Config: ['optimizer=LN_COBYLA', 'maxiter=30', 'initial_step=0.001', 'initial_point=(-0.4, 1.2)']
+Energy: -2.0152383123301854  Config: ['optimizer=LN_COBYLA', 'maxiter=10', 'initial_step=0.001', 'initial_point=(-0.4, 1.2)']
+Energy: -2.0152383123301854  Config: ['optimizer=LN_COBYLA', 'maxiter=50', 'initial_step=0.001', 'initial_point=(-0.4, 1.2)']
+Energy: -2.015238312326499  Config: ['optimizer=LN_BOBYQA', 'maxiter=30', 'initial_step=0.001', 'initial_point=(0, 1.2)']
+Energy: -2.015238312326499  Config: ['optimizer=LN_BOBYQA', 'maxiter=50', 'initial_step=0.001', 'initial_point=(0, 1.2)']
 
 
 ## Roadmap
 - Docs and tests
 - Execution
-    - Executors for other backends, e.g. Cirq.
+    - Jacobian
+    - Autodiff
+- Interpolation
+    - Alternative interpolators
 - Landscape
-    - Better visualization, especially for higher dimensions
     - Execution-hardness-aware parameter sampling
     - Support for irregular grid (integrate with `HyperparameterTuner`)
 - Reconstruction
-    - Avoid explicitly constructing the inverse DCT operator (by adding `scipy.optimize` or `cvxopt` implementations)
-    - Other types of compressed sensing (e.g. total variation)
+    - Data point confidence
 - Optimization
-    - Directly interface scipy optimizers
-    - Support the association of hyperparameters in tuner
+    - PCA on trace

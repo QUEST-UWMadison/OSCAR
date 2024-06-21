@@ -1,45 +1,46 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
-from functools import partial
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
 
-from .base_optimizer import BaseOptimizer
-from .trace import Trace
+from .base_optimizer import BaseOptimizer, ConstraintsType, JacobianType
 
 if TYPE_CHECKING:
-    from ..execution.base_executor import BaseExecutor
+    from ..execution.base_executor import BaseExecutor, CallbackType
 
 
 class CustomOptimizer(BaseOptimizer):
     def __init__(
-        self, optimizer: Callable[[NDArray[np.float64]], Mapping[str, Any]], name: str | None = None
+        self, optimizer: Callable[[NDArray[np.float64]], Any], name: str | None = None, **optimizer_kwargs
     ) -> None:
-        self.optimizer: Callable[[Sequence[float]], Mapping[str, Any]] = optimizer
+        self.optimizer: Callable[[NDArray[np.float64]], Any] = optimizer
         if name is None:
             name = self.optimizer.__name__
         self._name: str = name
+        self.optimizer_kwargs: dict[str, Any] = optimizer_kwargs
+        super().__init__()
 
     def name(self, include_library_name: bool = True) -> str:
         return self._name + (" (Custom)" if include_library_name else "")
 
-    def run(
+    def _run(
         self,
         executor: BaseExecutor,
-        initial_point: Sequence[float],
-        executor_kwargs: dict[str, Any] | None = None,
-        **kwargs,
-    ) -> tuple[Trace, Mapping[str, Any]]:
-        if executor_kwargs is None:
-            executor_kwargs = {}
-        trace = Trace()
-        result = self.optimizer(
-            partial(executor.run, callback=trace.append, **executor_kwargs),
-            np.array(initial_point),
-            **kwargs,
+        initial_point: NDArray[np.float64],
+        bounds: NDArray[np.float64] | None = None,
+        jacobian: JacobianType | None = None,
+        constraints: ConstraintsType | None = None,
+        callback: CallbackType | None = None,
+        **executor_kwargs,
+    ) -> None:
+        self.result = self.optimizer(
+            self._objective(executor, callback, **executor_kwargs),
+            initial_point,
+            bounds,
+            jacobian,
+            constraints,
+            **self.optimizer_kwargs,
         )
-        trace.update_with_custom_result(result)
-        return trace, result

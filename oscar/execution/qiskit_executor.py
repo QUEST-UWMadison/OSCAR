@@ -37,4 +37,4 @@ class QiskitExecutor(BaseExecutor):
         algorithm._check_operator_ansatz(operator)  # pylint: disable=protected-access
 
     def _run(self, params: Sequence[float], **kwargs) -> float:
-        return self.evaluate_energy(np.array(params), **kwargs)
+        return self.evaluate_energy(np.asarray(params), **kwargs)

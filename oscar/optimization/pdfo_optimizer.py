@@ -1,31 +1,34 @@
 from __future__ import annotations
 
+import warnings
+from typing import Any
+
 try:
-    import warnings
-    from typing import TYPE_CHECKING, Any, Literal
+    from typing import TYPE_CHECKING, Literal
 
     import numpy as np
+    import pdfo
     from numpy.typing import NDArray
-    from skquant.opt import minimize  # type: ignore
 
     from .base_optimizer import BaseOptimizer, ConstraintsType, JacobianType
+    from .scipy_optimizer import to_scipy_constraints
 
     if TYPE_CHECKING:
         from ..execution.base_executor import BaseExecutor, CallbackType
 
-    class ScikitQuantOptimizer(BaseOptimizer):
+    class PDFOOptimizer(BaseOptimizer):
         def __init__(
-            self, optimizer: Literal["imfil", "bobyqa", "snobfit", "nomad"], budget: int, **optimizer_kwargs
+            self,
+            optimizer: Literal["uobyqa", "newuoa", "bobyqa", "lincoa", "cobyla"] | None,
+            **optimizer_kwargs,
         ) -> None:
-            self.optimizer: Literal["imfil", "bobyqa", "snobfit", "nomad"] = optimizer
-            self.budget: int = budget
+            self.optimizer: Literal["uobyqa", "newuoa", "bobyqa", "lincoa", "cobyla"] | None = optimizer
             self.optimizer_kwargs: dict[str, Any] = optimizer_kwargs
-            super().__init__()
 
         def name(self, include_library_name: bool = True) -> str:
-            name: str = self.optimizer
+            name = "default" if self.optimizer is None else str(self.optimizer)
             if include_library_name:
-                name += " (Scikit-Quant)"
+                name += " (PDFO)"
             return name
 
         def _run(
@@ -40,15 +43,13 @@ try:
         ) -> None:
             if jacobian is not None:
                 warnings.warn("Jacobian is ignored for Scikit-Quant methods.")
-            if constraints is not None:
-                warnings.warn("Constraints are ignored for Scikit-Quant methods.")
-            self.result = minimize(
-                func=self._objective(executor, callback, **executor_kwargs),
-                x0=initial_point,
-                bounds=None if bounds is None else np.array(bounds),
-                budget=self.budget,
+            self.result = pdfo.pdfo(
+                fun=self._objective(executor, callback, **executor_kwargs),
+                x0=np.array(initial_point),
                 method=self.optimizer,
-                **self.optimizer_kwargs,
+                bounds=None if bounds is None else np.array(bounds),
+                constraints=to_scipy_constraints(constraints),
+                options=self.optimizer_kwargs,
             )
 
 except ImportError:

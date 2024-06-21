@@ -1,28 +1,36 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from collections.abc import Sequence
+from copy import copy
+from typing import Literal
 
 import numpy as np
-from nlopt import opt
 from numpy.typing import NDArray
-from qiskit.algorithms.optimizers import OptimizerResult
-
-if TYPE_CHECKING:
-    from pdfo import OptimizeResult
-    from SQCommon import Result
 
 
-@dataclass
 class Trace:
-    params_trace: list[NDArray[np.float64]] = field(default_factory=list)
-    value_trace: list[float] = field(default_factory=list)
-    time_trace: list[float] = field(default_factory=list)
-    optimal_params: NDArray[np.float64] | None = None
-    optimal_value: float | None = None
-    num_iters: int | None = None
-    num_fun_evals: int | None = None
+    def __init__(self, optimization_type: Literal["min", "max"] = "min") -> None:
+        self.params_trace: list[NDArray[np.float64]] = []
+        self.value_trace: list[float] = []
+        self.time_trace: list[float] = []
+        self.optimization_type: Literal["min", "max"] = optimization_type
+
+    @property
+    def num_fun_evals(self) -> int:
+        return len(self.value_trace)
+
+    @property
+    def optimal_params(self) -> NDArray[np.float64]:  # Known limitation: may violate constraints
+        argopt = np.argmin if self.optimization_type == "min" else np.argmax
+        return self.params_trace[argopt(self.value_trace)]
+
+    @property
+    def optimal_value(self) -> float:  # Known limitation: may violate constraints
+        return min(self.value_trace) if self.optimization_type == "min" else max(self.value_trace)
+
+    @property
+    def total_time(self) -> float:
+        return sum(self.time_trace)
 
     def append(self, params: Sequence[float], value: float, time: float) -> None:
         self.params_trace.append(np.array(params))
@@ -30,37 +38,23 @@ class Trace:
         self.time_trace.append(time)
 
     def print_result(self) -> None:
-        print(f"Total time: {sum(self.time_trace)}")
-        print("Optimal parameters reported: ", self.optimal_params)
-        print("Optimal value reported: ", self.optimal_value)
-        print("Number of evaluations: ", self.num_fun_evals)
+        print(self)
 
-    def update_with_custom_result(self, result: Mapping[str, Any]) -> None:
-        self.optimal_params = result["optimal_params"]
-        self.optimal_value = result["optimal_value"]
-        self.num_iters = result["num_iters"]
-        self.num_fun_evals = result["num_fun_evals"]
+    def project_to(self, *axes: int) -> Trace:
+        if len(axes) == 1 and isinstance(axes[0], Sequence):
+            axes = axes[0]
+        axes = list(axes)
+        trace = copy(self)
+        trace.params_trace = [params[axes] for params in trace.params_trace]
+        return trace
 
-    def update_with_nlopt_result(self, result: opt, optimal_params: NDArray[np.float64]) -> None:
-        self.optimal_params = optimal_params
-        self.optimal_value = result.last_optimum_value()
-        self.num_iters = result.get_numevals()
-        self.num_fun_evals = result.get_numevals()
+    def __getitem__(self, axes: int | Sequence[int]) -> Trace:
+        return self.project_to(axes)
 
-    def update_with_qiskit_result(self, result: OptimizerResult) -> None:
-        self.optimal_params = result.x
-        self.optimal_value = result.fun
-        self.num_iters = result.nit
-        self.num_fun_evals = result.nfev
-
-    def update_with_skquant_result(self, result: tuple[Result, NDArray[np.float64]]) -> None:
-        self.optimal_params = result[0].optpar
-        self.optimal_value = result[0].optval
-        self.num_fun_evals = len(result[1])
-        self.num_iters = len(result[1])
-
-    def update_with_pdfo_result(self, result: OptimizeResult) -> None:
-        self.optimal_params = result.x
-        self.optimal_value = result.fun
-        self.num_iters = result.nfev
-        self.num_fun_evals = result.nfev
+    def __repr__(self) -> str:
+        return (
+            f"Total evaluation time: {self.total_time}"  # Known limitation: doesn't include optimizer time
+            + f"\nOptimal parameters reported: {self.optimal_params}"
+            + f"\nOptimal value reported: {self.optimal_value}"
+            + f"\nNumber of evaluations: {self.num_fun_evals}"  # Known limitation: doesn't include Jacobian evaluations
+        )
