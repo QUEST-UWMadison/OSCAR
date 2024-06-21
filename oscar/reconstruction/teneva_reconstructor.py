@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -69,13 +70,18 @@ class TenevaReconstructor(BaseReconstructor):
         shuffle = rng.permutation(landscape.num_samples)
         data_train = landscape.sampled_landscape[shuffle]
         indices_train = sampled_indices[shuffle]
-        split = int(landscape.num_samples * self.validation_fraction)
+        split = round(landscape.num_samples * self.validation_fraction)
         if split > 0:
             data_valid = data_train[:split]
             indices_valid = indices_train[:split]
             data_train = data_train[split:]
             indices_train = indices_train[split:]
         else:
+            if self.validation_fraction > 0:
+                warnings.warn(
+                    "Validation fraction is too small to split data. "
+                    "Validation data is ignored."
+                )
             data_valid = None
             indices_valid = None
         if self.als_nsweeps > 0:

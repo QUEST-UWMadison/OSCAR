@@ -2,4 +2,3 @@ from __future__ import annotations
 
 from .compressed_sensing_reconstructor import CSReconstructor
 from .teneva_reconstructor import TenevaReconstructor
-from .tensor_network_compressed_sensing_reconstructor import TNCSReconstructor

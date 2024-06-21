@@ -81,7 +81,7 @@ class TensorLandscapeData(LandscapeData):
 
     def slice(self, slices: Sequence[slice | int] | slice | int) -> TensorLandscapeData | float:
         data = self.data[slices]
-        if isinstance(data, NDArray):
+        if isinstance(data, np.ndarray):
             return TensorLandscapeData(data)
         return data
 

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable, Literal
+from collections.abc import Callable
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
+from matplotlib.pyplot import Axes
 
 from ..landscape import Landscape
 from ..optimization import Trace
@@ -15,11 +17,11 @@ def plot_2d_landscape(
     trace: Trace | None = None,
     plot_optimum: Literal["min", "max", False, None] | tuple[float, float] = "min",
     show: bool = True,
-    figure: Figure | None = None,
+    figure: Figure | Axes | None = None,
     custom_plot_landscape_func: Callable | None = None,
     custom_plot_trace_func: Callable | None = None,
     custom_plot_optimum_func: Callable | None = None,
-) -> Figure:
+) -> Figure | Axes:
     if landscape.num_params != 2:
         raise ValueError("Landscape must be two-dimensional.")
     landscape = landscape.to_dense()

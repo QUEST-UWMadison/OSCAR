@@ -79,11 +79,11 @@ class Landscape:
 
     @property
     def optimal_params(self) -> NDArray[np.float64]:
-        return self.index_to_param(self.optimal_point_index)
+        return self.argmin()
 
     @property
     def optimal_point_index(self) -> NDArray[np.int_]:
-        return self.argmin()
+        return self.landscape.argmin()
 
     @property
     def optimal_value(self) -> float:
@@ -108,10 +108,10 @@ class Landscape:
         return self.num_samples / self.size
 
     def argmax(self, *args, **kwargs) -> NDArray[np.int_]:
-        return self.landscape.argmax(*args, **kwargs)
+        return self.index_to_param(self.landscape.argmax(*args, **kwargs))
 
     def argmin(self, *args, **kwargs) -> NDArray[np.int_]:
-        return self.landscape.argmin(*args, **kwargs)
+        return self.index_to_param(self.landscape.argmin(*args, **kwargs))
 
     def max(self, *args, **kwargs) -> float:
         return self.landscape.max(*args, **kwargs)
@@ -272,7 +272,7 @@ class Landscape:
     def _run(
         self, executor: BaseExecutor, params_list: Iterable[Sequence[float]], count: int
     ) -> NDArray[np.float64]:
-        return np.fromiter(executor.run_batch(params_list), float, count) # TODO: dtype
+        return np.fromiter(executor.run_batch(params_list), float, count) # TODO: support complex
 
     def _sample_indices(
         self, num_samples: int, rng: np.random.Generator | int | None = None

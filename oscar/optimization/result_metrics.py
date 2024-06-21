@@ -17,14 +17,14 @@ def _evaluate_optimal_point(trace: Trace, executor: BaseExecutor | None = None) 
 def approximation_ratio(
     min_value: float, max_value: float, executor: BaseExecutor | None = None
 ) -> Callable[[str, int, Trace, Any], float]:
-    def compute_ar(method: str, index: int, trace: Trace, result: Any) -> float:
+    def compute_ar(config_set_index: str, config_index: int, trace: Trace, result: Any) -> float:
         return (_evaluate_optimal_point(trace, executor) - min_value) / (max_value - min_value)
 
     return compute_ar
 
 
 def optimal_value(executor: BaseExecutor | None = None) -> Callable[[str, int, Trace, Any], float]:
-    def get_optimal_value(method: str, index: int, trace: Trace, result: Any) -> float:
+    def get_optimal_value(config_set_index: str, config_index: int, trace: Trace, result: Any) -> float:
         return _evaluate_optimal_point(trace, executor)
 
     return get_optimal_value

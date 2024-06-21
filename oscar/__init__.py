@@ -13,10 +13,15 @@ from .optimization import (
     Trace,
     result_metrics,
 )
-from .reconstruction import CSReconstructor, TenevaReconstructor, TNCSReconstructor
+from .reconstruction import CSReconstructor, TenevaReconstructor
 from .visualization import plot_2d_landscape
 
 try:
     from .optimization import ScikitQuantOptimizer
+except ImportError:
+    pass
+
+try:
+    from .optimization import PDFOOptimizer
 except ImportError:
     pass

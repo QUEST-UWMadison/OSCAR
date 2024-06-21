@@ -154,7 +154,7 @@ class CSReconstructor(BaseReconstructor):
             self._l2_norm(
                 self._project_to_basis(x.reshape(shape)).reshape(-1)[sampled_indices] - b
             )
-            ** 2
+            / self._l2_norm(b)
         )
 
     def objective_jacobian(
@@ -184,7 +184,11 @@ class CSReconstructor(BaseReconstructor):
         diff[sampled_indices] = (
             self._project_to_basis(x.reshape(shape)).reshape(-1)[sampled_indices] - b
         )
-        return -2 * self._project_to_basis(diff.reshape(shape), inverse=False).reshape(-1)
+        return (
+            -2
+            * self._project_to_basis(diff.reshape(shape), inverse=False).reshape(-1)
+            / self._l2_norm(b)
+        )
 
     @singledispatchmethod
     def _norm(self, x: NDArray[np.float64]) -> float:
@@ -207,7 +211,9 @@ class CSReconstructor(BaseReconstructor):
         return cp.norm(x, 2)
 
     @singledispatchmethod
-    def _project_to_basis(self, x: NDArray[np.float64], inverse: bool = True) -> NDArray[np.float64]:
+    def _project_to_basis(
+        self, x: NDArray[np.float64], inverse: bool = True
+    ) -> NDArray[np.float64]:
         project = idct if inverse else dct
         for i in range(len(x.shape)):
             x = project(x, norm="ortho", axis=i)

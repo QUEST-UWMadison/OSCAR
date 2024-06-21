@@ -16,3 +16,8 @@ try:
     from .scikit_quant_optimizer import ScikitQuantOptimizer
 except ImportError:
     pass
+
+try:
+    from .pdfo_optimizer import PDFOOptimizer
+except ImportError:
+    pass
