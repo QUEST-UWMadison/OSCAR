@@ -122,9 +122,9 @@ Reconstruct the full landscape with a desired `oscar.reconstruction.BaseReconstr
 
 
 ```python
-from oscar import BPDNReconstructor, plot_2d_landscape, BPReconstructor
+from oscar import CSReconstructor, plot_2d_landscape
 
-landscape.reconstruct(BPReconstructor(solver = None)) # choose and config a desired cvxpy solver
+landscape.reconstruct(CSReconstructor())
 figure = plot_2d_landscape(landscape)
 ```
 
