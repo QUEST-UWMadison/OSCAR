@@ -57,7 +57,10 @@ def plot_2d_landscape(
             )
         else:
             custom_plot_trace_func(*params_trace)
-    if plot_optimum not in [False, None]:
+    
+    if plot_optimum is None and trace is not None:
+        plot_optimum = trace.optimization_type
+    if plot_optimum is not False:
         if plot_optimum == "min":
             optimum = landscape.argmin()
         elif plot_optimum == "max":
